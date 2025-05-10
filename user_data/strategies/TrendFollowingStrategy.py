@@ -11,20 +11,20 @@ class TrendFollowingStrategy(IStrategy):
     INTERFACE_VERSION: int = 3
     # ROI table:
     minimal_roi = {
-        "0": 0.17,
-        "35": 0.075,
-        "55": 0.04,
-        "100": 0
+        "0": 0.253,
+        "18": 0.071,
+        "48": 0.032,
+        "165": 0
     }
     # minimal_roi = {"0": 1}
 
     # Stoploss:
-    stoploss = -0.331
+    stoploss = -0.349
 
     # Trailing stop:
     trailing_stop = True
-    trailing_stop_positive = 0.131
-    trailing_stop_positive_offset = 0.133
+    trailing_stop_positive =  0.018
+    trailing_stop_positive_offset = 0.066
     trailing_only_offset_is_reached = True
 
     timeframe = "5m"

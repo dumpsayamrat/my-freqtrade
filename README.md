@@ -37,10 +37,14 @@ Feel free to submit pull requests. Make sure not to commit any sensitive data!
 To run a backtest for your NFI5MOHO strategy using Docker Compose, you can use the following command:
 
 ```bash
-docker-compose run --rm freqtrade backtesting --strategy NFI5MOHO_WIP --timeframe 5m --timerange 20250401-
+docker-compose run --rm freqtrade backtesting --strategy TrendFollowingStrategy --timeframe 5m --timerange 20250201-
 ```
 
 
 ```bash
-docker-compose run --rm freqtrade download-data --config user_data/config.json --timerange 20250401- --timeframe 5m 1h
+docker-compose run --rm freqtrade download-data --config user_data/config.json --timerange 20250201- --timeframe 5m 1h
+```
+
+```bash
+ docker-compose run --rm  freqtrade hyperopt --config user_data/config.json --timerange 20250401- --hyperopt-loss SharpeHyperOptLoss --strategy TrendFollowingStrategy -e 100 --spaces roi stoploss trailing -j 30
 ```

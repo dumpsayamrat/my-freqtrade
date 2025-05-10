@@ -48,3 +48,8 @@ docker-compose run --rm freqtrade download-data --config user_data/config.json -
 ```bash
  docker-compose run --rm  freqtrade hyperopt --config user_data/config.json --timerange 20250401- --hyperopt-loss SharpeHyperOptLoss --strategy TrendFollowingStrategy -e 100 --spaces roi stoploss trailing -j 30
 ```
+
+```bash
+docker-compose run --rm freqtrade plot-dataframe --strategy PinbarStrategy --timeframe 5m --pair BTC/USDT:USDT --timerange 20250201-
+
+```

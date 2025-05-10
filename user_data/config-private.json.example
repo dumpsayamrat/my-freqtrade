@@ -1,0 +1,17 @@
+{
+    "$schema": "https://schema.freqtrade.io/schema.json",
+    "exchange": {
+        "key": "your-api-key-here",
+        "secret": "your-api-secret-here"
+    },
+    "telegram": {
+        "token": "your-telegram-token-here",
+        "chat_id": "your-telegram-chat-id-here"
+    },
+    "api_server": {
+        "jwt_secret_key": "generate-a-new-random-key-here",
+        "ws_token": "generate-a-new-random-token-here",
+        "username": "your-username-here",
+        "password": "your-password-here"
+    }
+}

@@ -1,0 +1,28 @@
+{
+  "strategy_name": "TrendFollowingStrategy",
+  "params": {
+    "max_open_trades": {
+      "max_open_trades": 6
+    },
+    "buy": {},
+    "sell": {},
+    "protection": {},
+    "roi": {
+      "0": 0.17,
+      "35": 0.07500000000000001,
+      "55": 0.04,
+      "100": 0
+    },
+    "stoploss": {
+      "stoploss": -0.331
+    },
+    "trailing": {
+      "trailing_stop": true,
+      "trailing_stop_positive": 0.131,
+      "trailing_stop_positive_offset": 0.133,
+      "trailing_only_offset_is_reached": true
+    }
+  },
+  "ft_stratparam_v": 1,
+  "export_time": "2025-05-06 14:48:45.093098+00:00"
+}

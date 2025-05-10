@@ -2,27 +2,27 @@
   "strategy_name": "PinbarStrategy",
   "params": {
     "max_open_trades": {
-      "max_open_trades": 55
+      "max_open_trades": 30
     },
     "buy": {},
     "sell": {},
     "protection": {},
     "roi": {
-      "0": 0.141,
-      "27": 0.034,
-      "53": 0.011,
-      "151": 0
+      "0": 0.257,
+      "39": 0.082,
+      "85": 0.021,
+      "190": 0
     },
     "stoploss": {
-      "stoploss": -0.053
+      "stoploss": -0.301
     },
     "trailing": {
       "trailing_stop": true,
-      "trailing_stop_positive": 0.146,
-      "trailing_stop_positive_offset": 0.176,
-      "trailing_only_offset_is_reached": true
+      "trailing_stop_positive": 0.208,
+      "trailing_stop_positive_offset": 0.252,
+      "trailing_only_offset_is_reached": false
     }
   },
   "ft_stratparam_v": 1,
-  "export_time": "2025-05-10 11:40:50.496969+00:00"
+  "export_time": "2025-05-10 14:34:24.892495+00:00"
 }

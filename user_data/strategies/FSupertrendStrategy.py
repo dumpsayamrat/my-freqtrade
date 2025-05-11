@@ -25,6 +25,7 @@ class FSupertrendStrategy(IStrategy):
     # It's encourage you find the values that better suites your needs and risk management strategies
 
     INTERFACE_VERSION: int = 3
+    can_short = True
     # Buy hyperspace params:
     buy_params = {
         "buy_m1": 2,

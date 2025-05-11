@@ -1,0 +1,32 @@
+{
+  "strategy_name": "FReinforcedStrategy",
+  "params": {
+    "trailing": {
+      "trailing_stop": false,
+      "trailing_stop_positive": null,
+      "trailing_stop_positive_offset": 0.0,
+      "trailing_only_offset_is_reached": false
+    },
+    "max_open_trades": {
+      "max_open_trades": 5
+    },
+    "buy": {
+      "pos_entry_adx": 38.3
+    },
+    "sell": {
+      "pos_exit_adx": 35.3
+    },
+    "protection": {},
+    "roi": {
+      "0": 0.167,
+      "26": 0.06,
+      "70": 0.025,
+      "93": 0
+    },
+    "stoploss": {
+      "stoploss": -0.149
+    }
+  },
+  "ft_stratparam_v": 1,
+  "export_time": "2025-05-10 15:12:07.923151+00:00"
+}

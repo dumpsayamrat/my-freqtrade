@@ -32,47 +32,6 @@
         "use_order_book": true,
         "order_book_top": 1
     },
-    "exchange": {
-        "name": "binance",
-        "key": "",
-        "secret": "",
-        "ccxt_config": {},
-        "ccxt_async_config": {},
-        "pair_whitelist": [
-            "BTC/USDT:USDT",
-            "ETH/USDT:USDT",
-            "XRP/USDT:USDT",
-            "BNB/USDT:USDT",
-            "SOL/USDT:USDT",
-            "DOGE/USDT:USDT",
-            "ADA/USDT:USDT",
-            "AVAX/USDT:USDT",
-            "LINK/USDT:USDT",
-            "UNI/USDT:USDT",
-            "APT/USDT:USDT",
-            "AAVE/USDT:USDT",
-            "ARB/USDT:USDT",
-            "ALGO/USDT:USDT",
-            "FIL/USDT:USDT",
-            "ATOM/USDT:USDT",
-            "OP/USDT:USDT",
-            "TRX/USDT:USDT",
-            "RNDR/USDT:USDT",
-            "OM/USDT:USDT",
-            "CRO/USDT:USDT",
-            "TAO/USDT:USDT",
-            "TKX/USDT:USDT",
-            "MNT/USDT:USDT"
-        ],
-        "pair_blacklist": [
-            "BNB/.*"
-        ]
-    },
-    "pairlists": [
-        {
-            "method": "StaticPairList"
-        }
-    ],
     "telegram": {
         "enabled": false,
         "token": "",
@@ -96,7 +55,5 @@
     "internals": {
         "process_throttle_secs": 5
     },
-    "add_config_files": [
-        "config-private.json"
-    ]
+    "add_config_files": []
 }

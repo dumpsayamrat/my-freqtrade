@@ -1,0 +1,42 @@
+{
+    "$schema": "https://schema.freqtrade.io/schema.json",
+    "pairlists": [
+        {
+            "method": "VolumePairList",
+            "number_assets": 20,
+            "sort_key": "quoteVolume",
+            "min_value": 0,
+            "refresh_period": 3600
+        },
+        {
+            "method": "AgeFilter",
+            "min_days_listed": 30
+        },
+        {
+            "method": "PrecisionFilter"
+        },
+        {
+            "method": "PriceFilter",
+            "low_price_ratio": 0.01
+        },
+        {
+            "method": "SpreadFilter",
+            "max_spread_ratio": 0.005
+        },
+        {
+            "method": "VolatilityFilter",
+            "lookback_days": 14,
+            "min_volatility": 0.02,
+            "max_volatility": 0.50,
+            "refresh_period": 86400
+        },
+        {
+            "method": "ShuffleFilter",
+            "seed": 42
+        }
+    ],
+    "add_config_files": [
+        "config.json",
+        "config-private.json"
+    ]
+}

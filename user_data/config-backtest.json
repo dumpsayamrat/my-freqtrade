@@ -1,0 +1,47 @@
+{
+    "$schema": "https://schema.freqtrade.io/schema.json",
+    "pairlists": [
+        {
+            "method": "StaticPairList"
+        }
+    ],
+    "exchange": {
+        "name": "binance",
+        "key": "",
+        "secret": "",
+        "ccxt_config": {},
+        "ccxt_async_config": {},
+        "pair_whitelist": [
+            "BTC/USDT:USDT",
+            "ETH/USDT:USDT",
+            "XRP/USDT:USDT",
+            "BNB/USDT:USDT",
+            "SOL/USDT:USDT",
+            "DOGE/USDT:USDT",
+            "ADA/USDT:USDT",
+            "AVAX/USDT:USDT",
+            "LINK/USDT:USDT",
+            "UNI/USDT:USDT",
+            "APT/USDT:USDT",
+            "AAVE/USDT:USDT",
+            "ARB/USDT:USDT",
+            "ALGO/USDT:USDT",
+            "FIL/USDT:USDT",
+            "ATOM/USDT:USDT",
+            "OP/USDT:USDT",
+            "TRX/USDT:USDT",
+            "RNDR/USDT:USDT",
+            "OM/USDT:USDT",
+            "CRO/USDT:USDT",
+            "TAO/USDT:USDT",
+            "TKX/USDT:USDT",
+            "MNT/USDT:USDT"
+        ],
+        "pair_blacklist": [
+            "BNB/.*"
+        ]
+    },
+    "add_config_files": [
+        "config.json"
+    ]
+}

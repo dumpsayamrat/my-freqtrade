@@ -1,6 +1,7 @@
 {
     "$schema": "https://schema.freqtrade.io/schema.json",
     "exchange": {
+        "name": "binance",
         "key": "your-api-key-here",
         "secret": "your-api-secret-here"
     },

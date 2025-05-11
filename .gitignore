@@ -11,6 +11,9 @@ user_data/plot/
 user_data/config-private.json
 user_data/config.json.orig
 user_data/config-*.json
+# Exceptions - Track these files despite the patterns above
+!user_data/config-prod.json
+!user_data/config-backtest.json
 
 # Prevent accidental leaks of credentials
 *.key

@@ -72,7 +72,7 @@ docker-compose run --rm freqtrade download-data --config /freqtrade/user_data/co
 ```
 
 ```bash
- docker-compose run --rm  freqtrade hyperopt --config /freqtrade/user_data/config-backtest.json --timerange 20250401- --hyperopt-loss SharpeHyperOptLoss --strategy TrendFollowingStrategy -e 100 --spaces roi stoploss trailing -j 30
+ docker-compose run --rm  freqtrade hyperopt --config /freqtrade/user_data/config-backtest.json --timerange 20250401- --hyperopt-loss SharpeHyperOptLoss --strategy TrendFollowingStrategy -e 100 --spaces roi stoploss trailing -j 16
 ```
 
 ```bash
@@ -85,7 +85,7 @@ To run commands using the production configuration, use the `-f docker-compose.p
 
 ```bash
 # Run backtesting with production configuration
-docker-compose -f docker-compose.prod.yml run --rm freqtrade backtesting --config /freqtrade/user_data/config-prod.json --strategy CryptoFrog --timeframe 1h --timerange 20250201-
+docker-compose -f docker-compose.prod.yml run --rm freqtrade backtesting --config /freqtrade/user_data/config-prod.json --strategy FSupertrendStrategy --timeframe 1h --timerange 20250301-
 
 # Download data with production configuration
 docker-compose -f docker-compose.prod.yml run --rm freqtrade download-data --config /freqtrade/user_data/config-prod.json --timerange 20250201- --timeframe 1h 4h

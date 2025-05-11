@@ -43,6 +43,8 @@ docker-compose run --rm freqtrade backtesting --strategy TrendFollowingStrategy 
 
 ```bash
 docker-compose run --rm freqtrade download-data --config user_data/config.json --timerange 20250201- --timeframe 5m 1h
+
+docker-compose run --rm freqtrade download-data --config user_data/config.json --timerange 20240511-20250201 --timeframe 1h --prepend
 ```
 
 ```bash

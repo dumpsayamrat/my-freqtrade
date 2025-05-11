@@ -26,36 +26,41 @@ class FSupertrendStrategy(IStrategy):
 
     INTERFACE_VERSION: int = 3
     # Buy hyperspace params:
+       # Buy hyperspace params:
     buy_params = {
-        "buy_m1": 4,
-        "buy_m2": 7,
-        "buy_m3": 1,
-        "buy_p1": 8,
-        "buy_p2": 9,
-        "buy_p3": 8,
+        "buy_m1": 6,
+        "buy_m2": 6,
+        "buy_m3": 2,
+        "buy_p1": 19,
+        "buy_p2": 20,
+        "buy_p3": 17,
     }
 
     # Sell hyperspace params:
     sell_params = {
-        "sell_m1": 1,
-        "sell_m2": 3,
+        "sell_m1": 3,
+        "sell_m2": 7,
         "sell_m3": 6,
-        "sell_p1": 16,
-        "sell_p2": 18,
-        "sell_p3": 18,
+        "sell_p1": 15,
+        "sell_p2": 15,
+        "sell_p3": 21,
     }
 
     # ROI table:
-    minimal_roi = {"0": 0.1, "30": 0.75, "60": 0.05, "120": 0.025}
-    # minimal_roi = {"0": 1}
+    minimal_roi = {
+        "0": 0.309,
+        "144": 0.077,
+        "448": 0.037,
+        "1766": 0
+    }
 
     # Stoploss:
-    stoploss = -0.265
+    stoploss = -0.28
 
     # Trailing stop:
     trailing_stop = True
-    trailing_stop_positive = 0.05
-    trailing_stop_positive_offset = 0.1
+    trailing_stop_positive = 0.127
+    trailing_stop_positive_offset = 0.216
     trailing_only_offset_is_reached = False
 
     timeframe = "1h"

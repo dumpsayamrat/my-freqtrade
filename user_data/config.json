@@ -1,6 +1,6 @@
 {
     "$schema": "https://schema.freqtrade.io/schema.json",
-    "max_open_trades": 4,
+    "max_open_trades": 5,
     "stake_currency": "USDT",
     "stake_amount": "unlimited",
     "tradable_balance_ratio": 0.99,
@@ -49,29 +49,20 @@
             "AVAX/USDT:USDT",
             "LINK/USDT:USDT",
             "UNI/USDT:USDT",
-            "SUI/USDT:USDT",
             "APT/USDT:USDT",
             "AAVE/USDT:USDT",
             "ARB/USDT:USDT",
             "ALGO/USDT:USDT",
-            "ETC/USDT:USDT",
-            "FET/USDT:USDT",
             "FIL/USDT:USDT",
             "ATOM/USDT:USDT",
             "OP/USDT:USDT",
             "TRX/USDT:USDT",
-            "TON/USDT:USDT",
             "RNDR/USDT:USDT",
             "OM/USDT:USDT",
             "CRO/USDT:USDT",
-            "POL/USDT:USDT",
-            "VET/USDT:USDT",
             "TAO/USDT:USDT",
-            "XMR/USDT:USDT",
             "TKX/USDT:USDT",
-            "MNT/USDT:USDT",
-            "KAS/USDT:USDT",
-            "ENA/USDT:USDT"
+            "MNT/USDT:USDT"
         ],
         "pair_blacklist": [
             "BNB/.*"

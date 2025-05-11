@@ -2,208 +2,77 @@ import freqtrade.vendor.qtpylib.indicators as qtpylib
 import numpy as np
 import talib.abstract as ta
 from freqtrade.strategy.interface import IStrategy
-from freqtrade.strategy import (merge_informative_pair,
-                                DecimalParameter, IntParameter, CategoricalParameter)
+from freqtrade.strategy import (
+    merge_informative_pair,
+    DecimalParameter,
+    IntParameter,
+    CategoricalParameter
+)
 from pandas import DataFrame
 from functools import reduce
 from freqtrade.persistence import Trade
 from datetime import datetime
 
-
 ###########################################################################################################
-##                CryptoFrog Strategy - based on NostalgiaForInfinityV5                                 ##
-##                                                                                                       ##
-##    Strategy for Freqtrade https://github.com/freqtrade/freqtrade                                     ##
-##                                                                                                       ##
+##                CryptoFrog Strategy – updated for Freqtrade INTERFACE_VERSION 3                        ##
 ###########################################################################################################
-##               GENERAL RECOMMENDATIONS                                                                 ##
-##                                                                                                       ##
-##   For optimal performance, suggested to use between 4 and 6 open trades, with unlimited stake.        ##
-##   A pairlist with 40 to 80 pairs. Volume pairlist works well.                                        ##
-##   Prefer stable coin (USDT, BUSDT etc) pairs, instead of BTC or ETH pairs.                           ##
-##   Highly recommended to blacklist leveraged tokens (*BULL, *BEAR, *UP, *DOWN etc).                   ##
-##   Ensure that you don't override any variables in you config.json. Especially                        ##
-##   the timeframe (must be 5m).                                                                        ##
-##                                                                                                       ##
-###########################################################################################################
-
 
 class CryptoFrog(IStrategy):
-    """
-    CryptoFrog Strategy
-    Based on NostalgiaForInfinityV5 and MultiOffsetLamboV0
-    
-    This strategy uses multiple technical indicators for buy conditions:
-    - EMA for trend following
-    - RSI for overbought/oversold conditions
-    - EWO (Elliott Wave Oscillator) for market structure
-    - Multiple price-to-MA offsets for entries
-    
-    The sell conditions are also based on multiple indicators including:
-    - RSI overbought conditions
-    - Bollinger Band upper band breaches
-    - Moving average crossovers
-    - Custom profit and dynamic trailing mechanisms
-    """
-    
-    # Protection parameters
-    protections = [
-        {
-            "method": "LowProfitPairs",
-            "lookback_period_candles": 60,
-            "trade_limit": 1,
-            "stop_duration": 60,
-            "required_profit": -0.05
-        },
-        {
-            "method": "CooldownPeriod",
-            "stop_duration_candles": 2
-        }
-    ]
-        
-    INTERFACE_VERSION = 3  # Updated from 2 to 3 for newer Freqtrade versions
+    INTERFACE_VERSION = 3
 
-    # Order type configuration
-    order_types = {
-        'entry': 'limit',
-        'exit': 'limit',
-        'trailing_stop_loss': 'limit',
-        'stoploss': 'limit',
-        'stoploss_on_exchange': False
-    }
-
-    #############################################################
-    # Buy parameters
-    buy_params = {
-        # Enable/Disable conditions
-        "buy_condition_1_enable": True,
-        "buy_condition_2_enable": True,
-        "buy_condition_3_enable": True,
-        "buy_condition_4_enable": True,
-        "buy_condition_5_enable": True,
-        "buy_condition_6_enable": True,
-        "buy_condition_7_enable": True,
-        "buy_condition_8_enable": True,
-        "buy_condition_9_enable": True,
-        "buy_condition_10_enable": True,
-        "buy_condition_11_enable": True,
-        "buy_condition_12_enable": True,
-        "buy_condition_13_enable": True,
-        "buy_condition_14_enable": True,
-        "buy_condition_15_enable": True,
-        "buy_condition_16_enable": True,
-        "buy_condition_17_enable": True,
-        "buy_condition_18_enable": True,
-        "buy_condition_19_enable": True,
-        "buy_condition_20_enable": True,
-        "buy_condition_21_enable": True,
-        # Hyperopt
-        # Multi Offset
-        "base_nb_candles_buy": 72,
-        "buy_chop_min_19": 58.2,
-        "buy_rsi_1h_min_19": 65.3,
-        "ewo_high": 3.319,
-        "ewo_low": -11.101,
-        "low_offset_ema": 0.929,
-        "low_offset_kama": 0.972,
-        "low_offset_sma": 0.955,
-        "low_offset_t3": 0.975,
-        "low_offset_trima": 0.949,
-    }
-
-    sell_params = {
-        # Enable/Disable conditions
-        "sell_condition_1_enable": True,
-        "sell_condition_2_enable": True,
-        "sell_condition_3_enable": True,
-        "sell_condition_4_enable": True,
-        "sell_condition_5_enable": True,
-        "sell_condition_6_enable": True,
-        "sell_condition_7_enable": True,
-        "sell_condition_8_enable": True,
-        # Hyperopt
-        # Multi Offset
-        "base_nb_candles_sell": 34,
-        "high_offset_ema": 1.047,
-        "high_offset_kama": 1.07,
-        "high_offset_sma": 1.051,
-        "high_offset_t3": 0.999,
-        "high_offset_trima": 1.096,
-    }
-
-    # ROI table (Return On Investment)
+    # ROI and stoploss
     minimal_roi = {
         "0": 0.08,
         "10": 0.04,
         "30": 0.02,
         "60": 0.01
     }
-
-    # Stoploss
     stoploss = -0.15
 
-    # Multi Offset parameters
-    base_nb_candles_buy = IntParameter(
-        5, 80, default=72, space='buy', optimize=False)
-    base_nb_candles_sell = IntParameter(
-        5, 80, default=34, space='sell', optimize=False)
-    low_offset_sma = DecimalParameter(
-        0.9, 0.99, default=0.955, space='buy', optimize=False)
-    high_offset_sma = DecimalParameter(
-        0.99, 1.1, default=1.051, space='sell', optimize=False)
-    low_offset_ema = DecimalParameter(
-        0.9, 0.99, default=0.929, space='buy', optimize=False)
-    high_offset_ema = DecimalParameter(
-        0.99, 1.1, default=1.047, space='sell', optimize=False)
-    low_offset_trima = DecimalParameter(
-        0.9, 0.99, default=0.949, space='buy', optimize=False)
-    high_offset_trima = DecimalParameter(
-        0.99, 1.1, default=1.096, space='sell', optimize=False)
-    low_offset_t3 = DecimalParameter(
-        0.9, 0.99, default=0.975, space='buy', optimize=False)
-    high_offset_t3 = DecimalParameter(
-        0.99, 1.1, default=0.999, space='sell', optimize=False)
-    low_offset_kama = DecimalParameter(
-        0.9, 0.99, default=0.972, space='buy', optimize=False)
-    high_offset_kama = DecimalParameter(
-        0.99, 1.1, default=1.07, space='sell', optimize=False)
+    # === HYPEROPT PARAMETERS ===
+    # buy‐space tunables (set optimize=True)
+    base_nb_candles_buy = IntParameter(5, 80, default=72, space='buy', optimize=True)
+    low_offset_sma      = DecimalParameter(0.9, 0.99, default=0.955, space='buy', optimize=True)
+    low_offset_ema      = DecimalParameter(0.9, 0.99, default=0.929, space='buy', optimize=True)
+    low_offset_trima    = DecimalParameter(0.9, 0.99, default=0.949, space='buy', optimize=True)
+    low_offset_t3       = DecimalParameter(0.9, 0.99, default=0.975, space='buy', optimize=True)
+    low_offset_kama     = DecimalParameter(0.9, 0.99, default=0.972, space='buy', optimize=True)
 
-    # Protection
-    ewo_low = DecimalParameter(
-        -20.0, -8.0, default=-11.101, space='buy', optimize=False)
-    ewo_high = DecimalParameter(
-        2.0, 12.0, default=3.319, space='buy', optimize=False)
-    fast_ewo = IntParameter(
-        10, 50, default=50, space='buy', optimize=False)
-    slow_ewo = IntParameter(
-        100, 200, default=200, space='buy', optimize=False)
+    # (…continue flipping optimize=True on any other buy‐space parameters you want to tune…)
 
-    # MA list
+    # sell‐space tunables
+    base_nb_candles_sell = IntParameter(5, 80, default=34, space='sell', optimize=True)
+    high_offset_sma      = DecimalParameter(0.99, 1.1, default=1.051, space='sell', optimize=True)
+    high_offset_ema      = DecimalParameter(0.99, 1.1, default=1.047, space='sell', optimize=True)
+    high_offset_trima    = DecimalParameter(0.99, 1.1, default=1.096, space='sell', optimize=True)
+    high_offset_t3       = DecimalParameter(0.99, 1.1, default=0.999, space='sell', optimize=True)
+    high_offset_kama     = DecimalParameter(0.99, 1.1, default=1.07,  space='sell', optimize=True)
+
+    # Elliott Wave Oscillator
+    ewo_low  = DecimalParameter(-20.0, -8.0, default=-11.101, space='buy', optimize=True)
+    ewo_high = DecimalParameter( 2.0, 12.0, default=3.319,   space='buy', optimize=True)
+    fast_ewo = IntParameter(10, 50, default=50, space='buy', optimize=True)
+    slow_ewo = IntParameter(100, 200, default=200, space='buy', optimize=True)
+
+    # Trailing stoploss config
+    trailing_stop                    = True
+    trailing_only_offset_is_reached  = True
+    trailing_stop_positive           = 0.01
+    trailing_stop_positive_offset    = 0.04
+
+    # Timeframes
+    timeframe = '1h'
+    inf_1h    = '1h'
+
+    process_only_new_candles = True
+    use_exit_signal          = True
+    exit_profit_only         = False
+    ignore_roi_if_entry_signal = True
+    startup_candle_count     = 300
+    
+     # MA list
     ma_types = ['sma', 'ema', 'trima', 't3', 'kama']
     ma_map = {}  # Will be populated in populate_indicators
-
-    # Trailing stoploss
-    trailing_stop = True
-    trailing_only_offset_is_reached = True
-    trailing_stop_positive = 0.01
-    trailing_stop_positive_offset = 0.04
-
-    use_custom_stoploss = False
-
-    # Optimal timeframe for the strategy
-    timeframe = '5m'
-    inf_1h = '1h'
-
-    # Run "populate_indicators()" only for new candle
-    process_only_new_candles = True
-
-    # These values can be overridden in the "ask_strategy" section in the config
-    use_exit_signal = True  # Updated from use_sell_signal
-    exit_profit_only = False  # Updated from sell_profit_only
-    ignore_roi_if_entry_signal = True  # Updated from ignore_roi_if_buy_signal
-
-    # Number of candles the strategy requires before producing valid signals
-    startup_candle_count: int = 300
 
     # Plot config
     plot_config = {

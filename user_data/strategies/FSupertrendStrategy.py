@@ -26,42 +26,41 @@ class FSupertrendStrategy(IStrategy):
 
     INTERFACE_VERSION: int = 3
     # Buy hyperspace params:
-       # Buy hyperspace params:
     buy_params = {
-        "buy_m1": 6,
-        "buy_m2": 6,
+        "buy_m1": 2,
+        "buy_m2": 3,
         "buy_m3": 2,
-        "buy_p1": 19,
-        "buy_p2": 20,
-        "buy_p3": 17,
+        "buy_p1": 9,
+        "buy_p2": 15,
+        "buy_p3": 9,
     }
 
     # Sell hyperspace params:
     sell_params = {
-        "sell_m1": 3,
-        "sell_m2": 7,
-        "sell_m3": 6,
-        "sell_p1": 15,
-        "sell_p2": 15,
-        "sell_p3": 21,
+        "sell_m1": 2,
+        "sell_m2": 4,
+        "sell_m3": 2,
+        "sell_p1": 18,
+        "sell_p2": 18,
+        "sell_p3": 8,
     }
 
     # ROI table:
     minimal_roi = {
-        "0": 0.309,
-        "144": 0.077,
-        "448": 0.037,
-        "1766": 0
+        "0": 0.139,
+        "203": 0.046,
+        "496": 0.023,
+        "950": 0
     }
 
     # Stoploss:
-    stoploss = -0.28
+    stoploss = -0.162
 
     # Trailing stop:
     trailing_stop = True
-    trailing_stop_positive = 0.127
-    trailing_stop_positive_offset = 0.216
-    trailing_only_offset_is_reached = False
+    trailing_stop_positive = 0.013
+    trailing_stop_positive_offset = 0.03
+    trailing_only_offset_is_reached = True
 
     timeframe = "1h"
 
@@ -82,39 +81,73 @@ class FSupertrendStrategy(IStrategy):
     sell_p3 = IntParameter(7, 21, default=10)
 
     def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
+        # 1) True Range once
+        tr = ta.TRANGE(dataframe)
+        dataframe["TR"] = tr
 
-        frames = []
+        # 2) ATR for every period that might be used
+        all_periods = (
+            set(self.buy_p1.range)   | set(self.buy_p2.range)   | set(self.buy_p3.range) |
+            set(self.sell_p1.range)  | set(self.sell_p2.range)  | set(self.sell_p3.range)
+        )
+        for p in all_periods:
+            dataframe[f"ATR_{p}"] = ta.SMA(tr, timeperiod=p)
 
-        # BUY supertrends
-        for multiplier, period, idx in [
-            (m, p, 1) for m in self.buy_m1.range for p in self.buy_p1.range
-        ] + [
-            (m, p, 2) for m in self.buy_m2.range for p in self.buy_p2.range
-        ] + [
-            (m, p, 3) for m in self.buy_m3.range for p in self.buy_p3.range
-        ]:
-            colname = f"supertrend_{idx}_buy_{multiplier}_{period}"
-            stx = self.supertrend(dataframe, multiplier, period)["STX"]
-            frames.append(pd.DataFrame({colname: stx}, index=dataframe.index))
+        # 3) Collect new columns in a dict
+        new_cols: dict[str, Series] = {}
 
-        # SELL supertrends
-        for multiplier, period, idx in [
-            (m, p, 1) for m in self.sell_m1.range for p in self.sell_p1.range
-        ] + [
-            (m, p, 2) for m in self.sell_m2.range for p in self.sell_p2.range
-        ] + [
-            (m, p, 3) for m in self.sell_m3.range for p in self.sell_p3.range
-        ]:
-            colname = f"supertrend_{idx}_sell_{multiplier}_{period}"
-            stx = self.supertrend(dataframe, multiplier, period)["STX"]
-            frames.append(pd.DataFrame({colname: stx}, index=dataframe.index))
+        # Use runmode to decide full-grid vs single-trial
+        is_hyperopt = self.config.get("runmode", "normal") == "hyperopt"
 
-        # one big join
-        indicators = pd.concat(frames, axis=1)
-        dataframe = dataframe.join(indicators)
+        if is_hyperopt:
+            # Full grid in hyperopt
+            for idx, (m_range, p_range) in enumerate([
+                (self.buy_m1.range, self.buy_p1.range),
+                (self.buy_m2.range, self.buy_p2.range),
+                (self.buy_m3.range, self.buy_p3.range),
+            ], start=1):
+                for m in m_range:
+                    for p in p_range:
+                        stx = self._supertrend(
+                            dataframe, multiplier=m, period=p,
+                            tr_col="TR", atr_col=f"ATR_{p}"
+                        )["STX"]
+                        new_cols[f"supertrend_{idx}_buy_{m}_{p}"] = stx
 
-        return dataframe
- 
+            for idx, (m_range, p_range) in enumerate([
+                (self.sell_m1.range, self.sell_p1.range),
+                (self.sell_m2.range, self.sell_p2.range),
+                (self.sell_m3.range, self.sell_p3.range),
+            ], start=1):
+                for m in m_range:
+                    for p in p_range:
+                        stx = self._supertrend(
+                            dataframe, multiplier=m, period=p,
+                            tr_col="TR", atr_col=f"ATR_{p}"
+                        )["STX"]
+                        new_cols[f"supertrend_{idx}_sell_{m}_{p}"] = stx
+
+        else:
+            # Only the six needed for live/backtest
+            combos = [
+                (1, self.buy_m1.value,  self.buy_p1.value,  "buy"),
+                (2, self.buy_m2.value,  self.buy_p2.value,  "buy"),
+                (3, self.buy_m3.value,  self.buy_p3.value,  "buy"),
+                (1, self.sell_m1.value, self.sell_p1.value, "sell"),
+                (2, self.sell_m2.value, self.sell_p2.value, "sell"),
+                (3, self.sell_m3.value, self.sell_p3.value, "sell"),
+            ]
+            for idx, m, p, side in combos:
+                stx = self._supertrend(
+                    dataframe, multiplier=m, period=p,
+                    tr_col="TR", atr_col=f"ATR_{p}"
+                )["STX"]
+                new_cols[f"supertrend_{idx}_{side}_{m}_{p}"] = stx
+
+        # 4) One big concat to avoid fragmentation
+        indicators = pd.DataFrame(new_cols, index=dataframe.index)
+        return dataframe.join(indicators)
+
     def populate_entry_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
 
         dataframe.loc[
@@ -189,62 +222,78 @@ class FSupertrendStrategy(IStrategy):
         from: https://github.com/freqtrade/freqtrade-strategies/issues/30
     """
 
-    def supertrend(self, dataframe: DataFrame, multiplier, period):
-        df = dataframe.copy()
+    def _supertrend(
+        self,
+        df: DataFrame,
+        multiplier: int,
+        period: int,
+        tr_col: str = "TR",
+        atr_col: str = None
+    ) -> DataFrame:
+        """
+        Fast Supertrend calculation using precomputed TR and ATR columns.
+        Returns a DataFrame with columns:
+        - ST:  the Supertrend value
+        - STX: 'up' or 'down' signal
+        """
+        if atr_col is None:
+            atr_col = f"ATR_{period}"
 
-        df["TR"] = ta.TRANGE(df)
-        df["ATR"] = ta.SMA(df["TR"], period)
+        high = df["high"].values
+        low  = df["low"].values
+        close = df["close"].values
+        tr   = df[tr_col].values
+        atr  = df[atr_col].values
 
-        st = "ST_" + str(period) + "_" + str(multiplier)
-        stx = "STX_" + str(period) + "_" + str(multiplier)
+        length = len(df)
+        final_ub = np.zeros(length)
+        final_lb = np.zeros(length)
+        st       = np.zeros(length)
+        stx      = np.zeros(length, dtype=object)
 
-        # Compute basic upper and lower bands
-        df["basic_ub"] = (df["high"] + df["low"]) / 2 + multiplier * df["ATR"]
-        df["basic_lb"] = (df["high"] + df["low"]) / 2 - multiplier * df["ATR"]
+        # basic bands
+        basic_ub = (high + low) / 2 + multiplier * atr
+        basic_lb = (high + low) / 2 - multiplier * atr
 
-        # Compute final upper and lower bands
-        df["final_ub"] = 0.00
-        df["final_lb"] = 0.00
-        for i in range(period, len(df)):
-            df["final_ub"].iat[i] = (
-                df["basic_ub"].iat[i]
-                if df["basic_ub"].iat[i] < df["final_ub"].iat[i - 1]
-                or df["close"].iat[i - 1] > df["final_ub"].iat[i - 1]
-                else df["final_ub"].iat[i - 1]
-            )
-            df["final_lb"].iat[i] = (
-                df["basic_lb"].iat[i]
-                if df["basic_lb"].iat[i] > df["final_lb"].iat[i - 1]
-                or df["close"].iat[i - 1] < df["final_lb"].iat[i - 1]
-                else df["final_lb"].iat[i - 1]
-            )
+        # seed first values
+        final_ub[:period] = basic_ub[:period]
+        final_lb[:period] = basic_lb[:period]
+        st[:period] = basic_ub[:period]
+        stx[:period] = "down"  # or match your original default
 
-        # Set the Supertrend value
-        df[st] = 0.00
-        for i in range(period, len(df)):
-            df[st].iat[i] = (
-                df["final_ub"].iat[i]
-                if df[st].iat[i - 1] == df["final_ub"].iat[i - 1]
-                and df["close"].iat[i] <= df["final_ub"].iat[i]
-                else df["final_lb"].iat[i]
-                if df[st].iat[i - 1] == df["final_ub"].iat[i - 1]
-                and df["close"].iat[i] > df["final_ub"].iat[i]
-                else df["final_lb"].iat[i]
-                if df[st].iat[i - 1] == df["final_lb"].iat[i - 1]
-                and df["close"].iat[i] >= df["final_lb"].iat[i]
-                else df["final_ub"].iat[i]
-                if df[st].iat[i - 1] == df["final_lb"].iat[i - 1]
-                and df["close"].iat[i] < df["final_lb"].iat[i]
-                else 0.00
-            )
-        # Mark the trend direction up/down
-        df[stx] = np.where(
-            (df[st] > 0.00), np.where((df["close"] < df[st]), "down", "up"), np.NaN
-        )
+        # rolling calculation
+        for i in range(period, length):
+            prev_ub = final_ub[i - 1]
+            prev_lb = final_lb[i - 1]
+            prev_st = st[i - 1]
+            prev_close = close[i - 1]
 
-        # Remove basic and final bands from the columns
-        df.drop(["basic_ub", "basic_lb", "final_ub", "final_lb"], inplace=True, axis=1)
+            # final upper band
+            if basic_ub[i] < prev_ub or prev_close > prev_ub:
+                final_ub[i] = basic_ub[i]
+            else:
+                final_ub[i] = prev_ub
 
-        df.fillna(0, inplace=True)
+            # final lower band
+            if basic_lb[i] > prev_lb or prev_close < prev_lb:
+                final_lb[i] = basic_lb[i]
+            else:
+                final_lb[i] = prev_lb
 
-        return DataFrame(index=df.index, data={"ST": df[st], "STX": df[stx]})
+            # Supertrend line
+            if prev_st == prev_ub and close[i] <= final_ub[i]:
+                st[i] = final_ub[i]
+            elif prev_st == prev_ub and close[i] > final_ub[i]:
+                st[i] = final_lb[i]
+            elif prev_st == prev_lb and close[i] >= final_lb[i]:
+                st[i] = final_lb[i]
+            else:
+                st[i] = final_ub[i]
+
+            # direction flag
+            stx[i] = "down" if close[i] < st[i] else "up"
+
+        return DataFrame({
+            "ST":  st,
+            "STX": stx
+        }, index=df.index)

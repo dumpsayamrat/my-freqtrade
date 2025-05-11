@@ -2,41 +2,41 @@
   "strategy_name": "FSupertrendStrategy",
   "params": {
     "max_open_trades": {
-      "max_open_trades": 4
+      "max_open_trades": 5
     },
     "buy": {
-      "buy_m1": 6,
-      "buy_m2": 6,
+      "buy_m1": 2,
+      "buy_m2": 3,
       "buy_m3": 2,
-      "buy_p1": 19,
-      "buy_p2": 20,
-      "buy_p3": 17
+      "buy_p1": 9,
+      "buy_p2": 15,
+      "buy_p3": 9
     },
     "sell": {
-      "sell_m1": 3,
-      "sell_m2": 7,
-      "sell_m3": 6,
-      "sell_p1": 15,
-      "sell_p2": 15,
-      "sell_p3": 21
+      "sell_m1": 2,
+      "sell_m2": 4,
+      "sell_m3": 2,
+      "sell_p1": 18,
+      "sell_p2": 18,
+      "sell_p3": 8
     },
     "protection": {},
     "roi": {
-      "0": 0.39,
-      "250": 0.119,
-      "515": 0.046,
-      "1254": 0
+      "0": 0.139,
+      "203": 0.046,
+      "496": 0.023,
+      "950": 0
     },
     "stoploss": {
-      "stoploss": -0.218
+      "stoploss": -0.162
     },
     "trailing": {
       "trailing_stop": true,
-      "trailing_stop_positive": 0.061,
-      "trailing_stop_positive_offset": 0.088,
-      "trailing_only_offset_is_reached": false
+      "trailing_stop_positive": 0.013,
+      "trailing_stop_positive_offset": 0.03,
+      "trailing_only_offset_is_reached": true
     }
   },
   "ft_stratparam_v": 1,
-  "export_time": "2025-05-11 03:06:45.419457+00:00"
+  "export_time": "2025-05-11 11:53:02.373571+00:00"
 }

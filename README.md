@@ -72,7 +72,11 @@ docker-compose run --rm freqtrade download-data --config /freqtrade/user_data/co
 ```
 
 ```bash
- docker-compose run --rm  freqtrade hyperopt --config /freqtrade/user_data/config-backtest.json --timerange 20250401- --hyperopt-loss SharpeHyperOptLoss --strategy TrendFollowingStrategy -e 100 --spaces roi stoploss trailing -j 16
+docker-compose run --rm  freqtrade hyperopt --config /freqtrade/user_data/config-backtest.json --timerange 20250401- --hyperopt-loss SharpeHyperOptLoss --strategy TrendFollowingStrategy -e 100 --spaces roi stoploss trailing -j 16
+
+docker-compose run --rm  freqtrade hyperopt --config /freqtrade/user_data/config-backtest.json --timerange 20250101- --hyperopt-loss ProfitDrawDownHyperOptLoss  --strategy FSupertrendStrategy -e 500 --spaces roi stoploss trailing sell buy -j 24
+
+docker-compose run --rm  freqtrade hyperopt --config /freqtrade/user_data/config-backtest.json --timerange 20250101- --hyperopt-loss SharpeHyperOptLoss  --strategy FSupertrendStrategy -e 500 --spaces roi stoploss trailing sell buy -j 24
 ```
 
 ```bash
@@ -85,11 +89,11 @@ To run commands using the production configuration, use the `-f docker-compose.p
 
 ```bash
 # Run backtesting with production configuration
-docker-compose -f docker-compose.prod.yml run --rm freqtrade backtesting --config /freqtrade/user_data/config-prod.json --strategy FSupertrendStrategy --timeframe 1h --timerange 20250301-
+docker-compose run --rm freqtrade backtesting --config /freqtrade/user_data/config-backtest.json --strategy FSupertrendStrategy --timeframe 1h --timerange 20250301-
 
 # Download data with production configuration
-docker-compose -f docker-compose.prod.yml run --rm freqtrade download-data --config /freqtrade/user_data/config-prod.json --timerange 20250201- --timeframe 1h 4h
+docker-compose run --rm freqtrade download-data --config /freqtrade/user_data/config-backtest.json --timerange 20250201- --timeframe 1h 4h
 
 # Plot dataframe with production configuration
-docker-compose -f docker-compose.prod.yml run --rm freqtrade plot-dataframe --config /freqtrade/user_data/config-prod.json --strategy CryptoFrog --timeframe 1h --pair BTC/USDT:USDT --timerange 20250201-
+docker-compose run --rm freqtrade plot-dataframe --config /freqtrade/user_data/config-backtest.json --strategy FSupertrendStrategy --timeframe 1h --pair VIRTUAL/USDT:USDT --timerange 20250505-
 ```

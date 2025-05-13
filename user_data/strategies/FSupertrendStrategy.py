@@ -30,38 +30,38 @@ class FSupertrendStrategy(IStrategy):
     # Buy hyperspace params:
     buy_params = {
         "buy_m1": 2,
-        "buy_m2": 3,
-        "buy_m3": 2,
-        "buy_p1": 9,
-        "buy_p2": 15,
-        "buy_p3": 9,
+        "buy_m2": 1,
+        "buy_m3": 1,
+        "buy_p1": 17,
+        "buy_p2": 16,
+        "buy_p3": 14,
     }
 
     # Sell hyperspace params:
     sell_params = {
-        "sell_m1": 2,
-        "sell_m2": 4,
+        "sell_m1": 5,
+        "sell_m2": 1,
         "sell_m3": 2,
-        "sell_p1": 18,
-        "sell_p2": 18,
-        "sell_p3": 8,
+        "sell_p1": 11,
+        "sell_p2": 15,
+        "sell_p3": 9,
     }
 
     # ROI table:
     minimal_roi = {
-        "0": 0.139,
-        "203": 0.046,
-        "496": 0.023,
-        "950": 0
+        "0": 0.088,
+        "336": 0.061,
+        "485": 0.029,
+        "1463": 0
     }
 
     # Stoploss:
-    stoploss = -0.162
+    stoploss = -0.294
 
     # Trailing stop:
     trailing_stop = True
-    trailing_stop_positive = 0.013
-    trailing_stop_positive_offset = 0.03
+    trailing_stop_positive = 0.012
+    trailing_stop_positive_offset = 0.033
     trailing_only_offset_is_reached = True
 
     timeframe = "1h"
@@ -86,54 +86,43 @@ class FSupertrendStrategy(IStrategy):
         return min(3.0, max_leverage)
 
     def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
-        # 1) True Range once
-        tr = ta.TRANGE(dataframe)
-        dataframe["TR"] = tr
 
-        # 2) ATR for every period that might be used
+        # 1) True‑Range
+        dataframe["TR"] = ta.TRANGE(dataframe)
+
+        # 2) ATR for every period that any IntParameter can output
         all_periods = (
-            set(self.buy_p1.range)   | set(self.buy_p2.range)   | set(self.buy_p3.range) |
-            set(self.sell_p1.range)  | set(self.sell_p2.range)  | set(self.sell_p3.range)
+            set(self.buy_p1.range)  | set(self.buy_p2.range)  | set(self.buy_p3.range) |
+            set(self.sell_p1.range) | set(self.sell_p2.range) | set(self.sell_p3.range)
         )
         for p in all_periods:
-            dataframe[f"ATR_{p}"] = ta.SMA(tr, timeperiod=p)
+            atr = ta.ATR(dataframe, timeperiod=p).bfill()   # back‑fill the leading NaNs
+            dataframe[f"ATR_{p}"] = atr
 
-        # 3) Collect new columns in a dict
-        new_cols: dict[str, Series] = {}
-
-        # Use runmode to decide full-grid vs single-trial
+        # 3) build Supertrend direction columns
+        make_cols: dict[str, pd.Series] = {}
         is_hyperopt = self.config.get("runmode", "normal") == "hyperopt"
 
-        if is_hyperopt:
-            # Full grid in hyperopt
-            for idx, (m_range, p_range) in enumerate([
-                (self.buy_m1.range, self.buy_p1.range),
-                (self.buy_m2.range, self.buy_p2.range),
-                (self.buy_m3.range, self.buy_p3.range),
-            ], start=1):
+        if is_hyperopt:                       # every grid point
+            grids = [
+                (1, self.buy_m1.range,  self.buy_p1.range,  "buy"),
+                (2, self.buy_m2.range,  self.buy_p2.range,  "buy"),
+                (3, self.buy_m3.range,  self.buy_p3.range,  "buy"),
+                (1, self.sell_m1.range, self.sell_p1.range, "sell"),
+                (2, self.sell_m2.range, self.sell_p2.range, "sell"),
+                (3, self.sell_m3.range, self.sell_p3.range, "sell"),
+            ]
+            for idx, m_range, p_range, side in grids:
                 for m in m_range:
                     for p in p_range:
-                        stx = self._supertrend(
-                            dataframe, multiplier=m, period=p,
-                            tr_col="TR", atr_col=f"ATR_{p}"
+                        stx = self._supertrend(           # ← all positional after df
+                            dataframe,
+                            m,
+                            p,
+                            f"ATR_{p}"
                         )["STX"]
-                        new_cols[f"supertrend_{idx}_buy_{m}_{p}"] = stx
-
-            for idx, (m_range, p_range) in enumerate([
-                (self.sell_m1.range, self.sell_p1.range),
-                (self.sell_m2.range, self.sell_p2.range),
-                (self.sell_m3.range, self.sell_p3.range),
-            ], start=1):
-                for m in m_range:
-                    for p in p_range:
-                        stx = self._supertrend(
-                            dataframe, multiplier=m, period=p,
-                            tr_col="TR", atr_col=f"ATR_{p}"
-                        )["STX"]
-                        new_cols[f"supertrend_{idx}_sell_{m}_{p}"] = stx
-
-        else:
-            # Only the six needed for live/backtest
+                        make_cols[f"supertrend_{idx}_{side}_{m}_{p}"] = stx
+        else:                                 # just the six the strategy will use
             combos = [
                 (1, self.buy_m1.value,  self.buy_p1.value,  "buy"),
                 (2, self.buy_m2.value,  self.buy_p2.value,  "buy"),
@@ -143,18 +132,16 @@ class FSupertrendStrategy(IStrategy):
                 (3, self.sell_m3.value, self.sell_p3.value, "sell"),
             ]
             for idx, m, p, side in combos:
-                stx = self._supertrend(
-                    dataframe, multiplier=m, period=p,
-                    tr_col="TR", atr_col=f"ATR_{p}"
-                )["STX"]
-                new_cols[f"supertrend_{idx}_{side}_{m}_{p}"] = stx
+                sti = self._supertrend(dataframe, m, p, f"ATR_{p}");
+                stx = sti["STX"]
+                st = sti["ST"]
+                make_cols[f"supertrend_{idx}_{side}_{m}_{p}"] = stx
+                make_cols[f"supertrend_{idx}_{side}_{m}_{p}_line"] = st
 
-        # 4) One big concat to avoid fragmentation
-        indicators = pd.DataFrame(new_cols, index=dataframe.index)
-        return dataframe.join(indicators)
+        # 4) join everything in one go (prevents fragmentation warnings)
+        return dataframe.join(pd.DataFrame(make_cols, index=dataframe.index))
 
     def populate_entry_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
-
         dataframe.loc[
             (
                 dataframe[f"supertrend_1_buy_{self.buy_m1.value}_{self.buy_p1.value}"]
@@ -222,83 +209,80 @@ class FSupertrendStrategy(IStrategy):
 
         return dataframe
 
-    """
-        Supertrend Indicator; adapted for freqtrade
-        from: https://github.com/freqtrade/freqtrade-strategies/issues/30
-    """
-
+    @staticmethod
     def _supertrend(
-        self,
         df: DataFrame,
         multiplier: int,
         period: int,
-        tr_col: str = "TR",
-        atr_col: str = None
+        atr_col: str = "ATR"
     ) -> DataFrame:
         """
-        Fast Supertrend calculation using precomputed TR and ATR columns.
-        Returns a DataFrame with columns:
-        - ST:  the Supertrend value
-        - STX: 'up' or 'down' signal
+        Vectorised Supertrend implementation that **never touches rows where
+        ATR is NaN**, so no NaNs are propagated into the final result.
+
+        Returns a DataFrame with:
+            - ST   : Supertrend line
+            - STX  : 'up' / 'down' direction flag
         """
-        if atr_col is None:
-            atr_col = f"ATR_{period}"
+        high, low, close = df["high"].values, df["low"].values, df["close"].values
+        atr = df[atr_col].values
 
-        high = df["high"].values
-        low  = df["low"].values
-        close = df["close"].values
-        tr   = df[tr_col].values
-        atr  = df[atr_col].values
+        length     = len(df)
+        st         = np.full(length, np.nan)
+        final_ub   = np.full(length, np.nan)
+        final_lb   = np.full(length, np.nan)
+        stx        = np.full(length, None, dtype=object)
 
-        length = len(df)
-        final_ub = np.zeros(length)
-        final_lb = np.zeros(length)
-        st       = np.zeros(length)
-        stx      = np.zeros(length, dtype=object)
+        hl2        = (high + low) / 2
+        basic_ub   = hl2 + multiplier * atr
+        basic_lb   = hl2 - multiplier * atr
 
-        # basic bands
-        basic_ub = (high + low) / 2 + multiplier * atr
-        basic_lb = (high + low) / 2 - multiplier * atr
+        # ── find first index where ATR is valid ──────────────────────────────
+        start = np.argmax(~np.isnan(atr))
+        if np.isnan(atr[start]):        # whole column is NaN → return empty
+            return DataFrame({"ST": st, "STX": stx}, index=df.index)
 
-        # seed first values
-        final_ub[:period] = basic_ub[:period]
-        final_lb[:period] = basic_lb[:period]
-        st[:period] = basic_ub[:period]
-        stx[:period] = "down"  # or match your original default
+        # seed the first valid row: assume initial trend is down
+        final_ub[start] = basic_ub[start]
+        final_lb[start] = basic_lb[start]
+        st[start]       = final_ub[start]
+        stx[start]      = "down"
 
-        # rolling calculation
-        for i in range(period, length):
-            prev_ub = final_ub[i - 1]
-            prev_lb = final_lb[i - 1]
-            prev_st = st[i - 1]
-            prev_close = close[i - 1]
+        # main loop
+        for i in range(start + 1, length):
+            # final upper / lower bands
+            final_ub[i] = (
+                basic_ub[i] if (basic_ub[i] < final_ub[i - 1] or close[i - 1] > final_ub[i - 1])
+                else final_ub[i - 1]
+            )
+            final_lb[i] = (
+                basic_lb[i] if (basic_lb[i] > final_lb[i - 1] or close[i - 1] < final_lb[i - 1])
+                else final_lb[i - 1]
+            )
 
-            # final upper band
-            if basic_ub[i] < prev_ub or prev_close > prev_ub:
-                final_ub[i] = basic_ub[i]
-            else:
-                final_ub[i] = prev_ub
-
-            # final lower band
-            if basic_lb[i] > prev_lb or prev_close < prev_lb:
-                final_lb[i] = basic_lb[i]
-            else:
-                final_lb[i] = prev_lb
-
-            # Supertrend line
-            if prev_st == prev_ub and close[i] <= final_ub[i]:
+            # Supertrend switch
+            if   st[i - 1] == final_ub[i - 1] and close[i]  <= final_ub[i]:
                 st[i] = final_ub[i]
-            elif prev_st == prev_ub and close[i] > final_ub[i]:
+            elif st[i - 1] == final_ub[i - 1] and close[i]  >  final_ub[i]:
                 st[i] = final_lb[i]
-            elif prev_st == prev_lb and close[i] >= final_lb[i]:
+            elif st[i - 1] == final_lb[i - 1] and close[i]  >= final_lb[i]:
                 st[i] = final_lb[i]
             else:
                 st[i] = final_ub[i]
 
-            # direction flag
             stx[i] = "down" if close[i] < st[i] else "up"
 
-        return DataFrame({
-            "ST":  st,
-            "STX": stx
-        }, index=df.index)
+        return DataFrame({"ST": st, "STX": stx}, index=df.index)
+        
+    @property
+    def plot_config(self):
+        return {
+            'main_plot': {
+                f"supertrend_1_buy_{self.buy_m1.value}_{self.buy_p1.value}_line": {'color': 'green'},
+                f"supertrend_2_buy_{self.buy_m2.value}_{self.buy_p2.value}_line": {'color': 'green'},
+                f"supertrend_3_buy_{self.buy_m3.value}_{self.buy_p3.value}_line": {'color': 'green'},
+                f"supertrend_1_sell_{self.sell_m1.value}_{self.sell_p1.value}_line": {'color': 'red'},
+                f"supertrend_2_sell_{self.sell_m2.value}_{self.sell_p2.value}_line": {'color': 'red'},
+                f"supertrend_3_sell_{self.sell_m3.value}_{self.sell_p3.value}_line": {'color': 'red'},
+            }
+        }

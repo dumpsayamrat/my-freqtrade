@@ -192,7 +192,7 @@ class FSupertrendStrategy(IStrategy):
         dataframe.loc[
             (
                 dataframe[
-                    f"supertrend_2_sell_{self.sell_m2.value}_{self.sell_p2.value}"
+                    f"supertrend_1_sell_{self.sell_m1.value}_{self.sell_p1.value}"
                 ]
                 == "down"
             ),
@@ -201,7 +201,7 @@ class FSupertrendStrategy(IStrategy):
 
         dataframe.loc[
             (
-                dataframe[f"supertrend_2_buy_{self.buy_m2.value}_{self.buy_p2.value}"]
+                dataframe[f"supertrend_1_buy_{self.buy_m1.value}_{self.buy_p1.value}"]
                 == "up"
             ),
             "exit_short",

@@ -3,6 +3,10 @@
     "pairlists": [
         {
             "method": "StaticPairList"
+        },
+        {
+            "method": "ShuffleFilter",
+            "seed": 20
         }
     ],
     "exchange": {
@@ -20,7 +24,7 @@
             "WIF/USDT:USDT",
             "ADA/USDT:USDT",
             "SOL/USDT:USDT",
-            "WLD/USDT:USDT",
+            "PEOPLE/USDT:USDT",
             "BNB/USDT:USDT",
             "LINK/USDT:USDT",
             "DOGE/USDT:USDT",

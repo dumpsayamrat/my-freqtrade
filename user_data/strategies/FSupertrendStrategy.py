@@ -29,39 +29,39 @@ class FSupertrendStrategy(IStrategy):
     can_short = True
     # Buy hyperspace params:
     buy_params = {
-        "buy_m1": 2,
-        "buy_m2": 1,
-        "buy_m3": 1,
-        "buy_p1": 17,
-        "buy_p2": 16,
-        "buy_p3": 14,
+        "buy_m1": 5,
+        "buy_m2": 3,
+        "buy_m3": 6,
+        "buy_p1": 9,
+        "buy_p2": 7,
+        "buy_p3": 16,
     }
 
     # Sell hyperspace params:
     sell_params = {
-        "sell_m1": 5,
-        "sell_m2": 1,
-        "sell_m3": 2,
-        "sell_p1": 11,
-        "sell_p2": 15,
-        "sell_p3": 9,
+        "sell_m1": 1,
+        "sell_m2": 7,
+        "sell_m3": 1,
+        "sell_p1": 15,
+        "sell_p2": 21,
+        "sell_p3": 21,
     }
 
     # ROI table:
     minimal_roi = {
-        "0": 0.088,
-        "336": 0.061,
-        "485": 0.029,
-        "1463": 0
+        "0": 0.521,
+        "182": 0.126,
+        "378": 0.092,
+        "1018": 0
     }
 
     # Stoploss:
-    stoploss = -0.294
+    stoploss = -0.235
 
     # Trailing stop:
     trailing_stop = True
-    trailing_stop_positive = 0.012
-    trailing_stop_positive_offset = 0.033
+    trailing_stop_positive = 0.013
+    trailing_stop_positive_offset = 0.029
     trailing_only_offset_is_reached = True
 
     timeframe = "1h"
@@ -83,7 +83,7 @@ class FSupertrendStrategy(IStrategy):
     sell_p3 = IntParameter(7, 21, default=10)
     
     def leverage(self, pair: str, current_time: datetime, current_rate: float, proposed_leverage: float, max_leverage: float, entry_tag: str | None, side: str, **kwargs) -> float:
-        return min(3.0, max_leverage)
+        return min(1.0, max_leverage)
 
     def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
 
@@ -192,7 +192,7 @@ class FSupertrendStrategy(IStrategy):
         dataframe.loc[
             (
                 dataframe[
-                    f"supertrend_1_sell_{self.sell_m1.value}_{self.sell_p1.value}"
+                    f"supertrend_2_sell_{self.sell_m2.value}_{self.sell_p2.value}"
                 ]
                 == "down"
             ),
@@ -201,7 +201,7 @@ class FSupertrendStrategy(IStrategy):
 
         dataframe.loc[
             (
-                dataframe[f"supertrend_1_buy_{self.buy_m1.value}_{self.buy_p1.value}"]
+                dataframe[f"supertrend_2_buy_{self.buy_m2.value}_{self.buy_p2.value}"]
                 == "up"
             ),
             "exit_short",

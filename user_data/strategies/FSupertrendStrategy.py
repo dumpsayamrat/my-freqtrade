@@ -17,51 +17,55 @@ class FSupertrendStrategy(IStrategy):
     can_short = True
 
     # ===== unchanged core settings ============================================
-    # Buy hyperspace params:
+     # Buy hyperspace params:
     buy_params = {
-        "buy_m1": 1,
+        "buy_m1": 3,
         "buy_m2": 1,
-        "buy_m3": 2,
-        "buy_p1": 11,
-        "buy_p2": 7,
-        "buy_p3": 21,
-        "buy_supported_m": 7,
+        "buy_m3": 3,
+        "buy_p1": 13,
+        "buy_p2": 19,
+        "buy_p3": 13,
+        "buy_supported_m": 1,
         "buy_supported_p": 13,
     }
 
     # Sell hyperspace params:
     sell_params = {
-        "sell_m1": 5,
+        "sell_m1": 1,
         "sell_m2": 1,
         "sell_m3": 1,
-        "sell_p1": 9,
-        "sell_p2": 11,
-        "sell_p3": 12,
+        "sell_p1": 7,
+        "sell_p2": 7,
+        "sell_p3": 14,
         "sell_supported_m": 1,
-        "sell_supported_p": 16,
+        "sell_supported_p": 11,
     }
 
     # ROI table:
     minimal_roi = {
-        "0": 0.077,
-        "388": 0.05,
-        "602": 0.024,
-        "807": 0
+        "0": 0.08,
+        "132": 0.054,
+        "343": 0.026,
+        "1603": 0
     }
 
     # Stoploss:
-    stoploss = -0.19
+    stoploss = -0.177
 
     # Trailing stop:
     trailing_stop = True
-    trailing_stop_positive = 0.01
-    trailing_stop_positive_offset = 0.024
+    trailing_stop_positive = 0.013
+    trailing_stop_positive_offset = 0.032
     trailing_only_offset_is_reached = True
 
-    timeframe = "1h"
+
+    # Max Open Trades:
+    max_open_trades = 5  # value loaded from strategy
+
+    timeframe = "5m"
     startup_candle_count = 50
 
-    informative_tf = "5m"
+    informative_tf = "1h"
 
     # ===== hyperopt ranges ====================================================
     buy_m1 = IntParameter(1, 7, default=1)
@@ -89,106 +93,84 @@ class FSupertrendStrategy(IStrategy):
     def leverage(self, pair: str, current_time: datetime, current_rate: float,
                  proposed_leverage: float, max_leverage: float, entry_tag: str | None,
                  side: str, **kwargs) -> float:
-        return min(3.0, max_leverage)
+        return min(1.0, max_leverage)
 
     # -------------------------------------------------------------------------
     # Indicators
     # -------------------------------------------------------------------------
     def populate_indicators(self, df: DataFrame, metadata: dict) -> DataFrame:
         pair = metadata["pair"]
-
-        # --- 1 h core ----------------------------------------------------------
-        # df["TR"] = ta.TRANGE(df)
-        all_periods = (
-            set(self.buy_p1.range) | set(self.buy_p2.range) | set(self.buy_p3.range) |
-            set(self.sell_p1.range) | set(self.sell_p2.range) | set(self.sell_p3.range) |
-            set(self.buy_supported_p.range) | set(self.sell_supported_p.range)
-        )
-        for p in all_periods:
-            df[f"ATR_{p}"] = ta.ATR(df, timeperiod=p).bfill()
+        runmode_hyperopt = self.config.get("runmode", "normal") == "hyperopt"
 
         make_cols: dict[str, pd.Series] = {}
-        hyper = self.config.get("runmode", "normal") == "hyperopt"
-        if hyper:
-            grids = [
-                (1, self.buy_m1.range,  self.buy_p1.range,  "buy"),
-                (2, self.buy_m2.range,  self.buy_p2.range,  "buy"),
-                (3, self.buy_m3.range,  self.buy_p3.range,  "buy"),
-                (1, self.sell_m1.range, self.sell_p1.range, "sell"),
-                (2, self.sell_m2.range, self.sell_p2.range, "sell"),
-                (3, self.sell_m3.range, self.sell_p3.range, "sell"),
-            ]
-            for idx, m_range, p_range, side in grids:
-                for m in m_range:
-                    for p in p_range:
-                        sti = self._supertrend(df, m, p, f"ATR_{p}")
-                        # direction column (needed for every grid point)
-                        make_cols[f"supertrend_{idx}_{side}_{m}_{p}"] = sti["STX"]
-                        # line column needed only for the mid-band filters
-                        if idx == 2:
-                            make_cols[f"supertrend_{idx}_{side}_{m}_{p}_line"] = sti["ST"]
 
-        else:
-            combos = [
-                (1, self.buy_m1.value,  self.buy_p1.value,  "buy"),
-                (2, self.buy_m2.value,  self.buy_p2.value,  "buy"),
-                (3, self.buy_m3.value,  self.buy_p3.value,  "buy"),
-                (1, self.sell_m1.value, self.sell_p1.value, "sell"),
-                (2, self.sell_m2.value, self.sell_p2.value, "sell"),
-                (3, self.sell_m3.value, self.sell_p3.value, "sell"),
-            ]
-            for idx, m, p, side in combos:
-                sti = self._supertrend(df, m, p, f"ATR_{p}")
-                make_cols[f"supertrend_{idx}_{side}_{m}_{p}"]      = sti["STX"]
-                make_cols[f"supertrend_{idx}_{side}_{m}_{p}_line"] = sti["ST"]
+        # === 1h informative timeframe indicators ===
+        inf = self.dp.get_pair_dataframe(pair=pair, timeframe=self.informative_tf).reset_index()
 
-        if hyper:
-            grids = [
-                (self.buy_supported_m.range,  self.buy_supported_p.range,  "buy"),
-                (self.sell_supported_m.range, self.sell_supported_p.range, "sell"),
-            ]
+        def collect_combos(idx_prefix: int, m, p, side: str):
+            if runmode_hyperopt:
+                return [(idx_prefix, mi, pi, side) for mi in m.range for pi in p.range]
+            else:
+                return [(idx_prefix, m.value, p.value, side)]
 
-            # 1) Pull the informative dataframe just once
-            inf = self.dp.get_pair_dataframe(pair=pair, timeframe=self.informative_tf)
-            # if your _supertrend or later logic needs a RangeIndex, do it once here:
-            inf = inf.reset_index()
+        all_combos = (
+            collect_combos(1, self.buy_m1, self.buy_p1, "buy") +
+            collect_combos(2, self.buy_m2, self.buy_p2, "buy") +
+            collect_combos(3, self.buy_m3, self.buy_p3, "buy") +
+            collect_combos(1, self.sell_m1, self.sell_p1, "sell") +
+            collect_combos(2, self.sell_m2, self.sell_p2, "sell") +
+            collect_combos(3, self.sell_m3, self.sell_p3, "sell")
+        )
 
-            # 2) Determine all unique ATR periods we’ll need
-            all_supported_ps = set(self.buy_supported_p.range) | set(self.sell_supported_p.range)
+        informative_atrs = {p for _, _, p, _ in all_combos}
+        for p in informative_atrs:
+            inf[f"INF_ATR_{p}"] = ta.ATR(inf, timeperiod=p).bfill()
 
-            for p in all_supported_ps:
-                atr_col = f"INF_ATR_{p}"
-                # compute ATR once
-                inf[atr_col] = ta.ATR(inf, timeperiod=p).bfill()
+        for idx, m, p, side in all_combos:
+            atr_col = f"INF_ATR_{p}"
+            st = self._supertrend(inf, m, p, atr_col)
+            make_cols[f"supertrend_{idx}_{side}_{m}_{p}"] = st["STX"]
+            if idx == 2:
+                make_cols[f"supertrend_{idx}_{side}_{m}_{p}_line"] = st["ST"]
 
-                # 3) for each grid side that uses this p, run all m’s
-                for m_range, p_range, side in grids:
-                    if p not in p_range:
-                        continue
-                    for m in m_range:
-                        st = self._supertrend(inf, m, p, atr_col)
-                        make_cols[f"supertrend_supported_{side}_{m}_{p}"] = st["STX"]
+        # Merge informative data into df
+        inf = merge_informative_pair(df, inf, self.timeframe, self.informative_tf, ffill=True)
+        df = df.join(pd.DataFrame({k: v for k, v in make_cols.items() if v is not None}, index=df.index))
 
-                # 4) drop the temporary ATR column to free memory
-                inf.drop(columns=[atr_col], inplace=True)
+        # === Supported supertrend on main timeframe ===
+        support_cols: dict[str, pd.Series] = {}
 
-        else:
-            inf = self.dp.get_pair_dataframe(pair=pair, timeframe=self.informative_tf)
-            combos = [
-                (self.buy_supported_m.value,  self.buy_supported_p.value,  "buy"),
-                (self.sell_supported_m.value,  self.sell_supported_p.value,  "sell"),
-            ]
-            for m, p, side in combos:
-                
-                inf[f"INF_ATR_{p}"] = ta.ATR(inf, timeperiod=p).bfill()
-                inf_st = self._supertrend(inf, m, p, f"INF_ATR_{p}")
-                inf[f"supertrend_supported_{side}_{m}_{p}"] = inf_st["STX"]
-                inf = inf.reset_index()
-                make_cols[f"supertrend_supported_{side}_{m}_{p}"] = inf_st["STX"]
+        support_combos = [
+            ("buy", self.buy_supported_m, self.buy_supported_p),
+            ("sell", self.sell_supported_m, self.sell_supported_p),
+        ]
 
-        df = df.join(pd.DataFrame(make_cols, index=df.index))
+        all_support_periods = set()
+        for _, _, p in support_combos:
+            if runmode_hyperopt:
+                all_support_periods |= set(p.range)
+
+        for p in all_support_periods:
+            df[f"ATR_{p}"] = ta.ATR(df, timeperiod=p).bfill()
+
+        for side, m_param, p_param in support_combos:
+            m_range = m_param.range if runmode_hyperopt else [m_param.value]
+            p_range = p_param.range if runmode_hyperopt else [p_param.value]
+
+            for m in m_range:
+                for p in p_range:
+                    atr_col = f"ATR_{p}"
+                    if atr_col not in df.columns:
+                        df[atr_col] = ta.ATR(df, timeperiod=p).bfill()
+                    st = self._supertrend(df, m, p, atr_col)
+                    support_cols[f"supertrend_supported_{side}_{m}_{p}"] = st["STX"]
+
+        # Join all supported columns at once to avoid fragmentation
+        df = pd.concat([df, pd.DataFrame(support_cols, index=df.index)], axis=1)
 
         return df
+
+
 
     # -------------------------------------------------------------------------
     # Entry

@@ -50,7 +50,7 @@ docker-compose -f docker-compose.prod.yml down
 To view logs from the production service:
 
 ```bash
-docker logs freqtrade-prod
+docker logs -f freqtrade-prod
 ```
 
 ⚠️ **Security Note**: The production configuration exposes the API on all network interfaces. Ensure proper security measures are in place if running on a public server.

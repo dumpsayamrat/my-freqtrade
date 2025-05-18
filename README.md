@@ -83,6 +83,8 @@ docker-compose run --rm  freqtrade hyperopt --config /freqtrade/user_data/config
 docker-compose run --rm freqtrade plot-dataframe --config /freqtrade/user_data/config-backtest.json --strategy PinbarStrategy --timeframe 5m --pair BTC/USDT:USDT --timerange 20250201-
 ```
 
+docker-compose run --rm  freqtrade hyperopt --config /freqtrade/user_data/config-backtest.json --timerange 20250401- --hyperopt-loss SharpeHyperOptLoss --strategy NFI5MOHO_WIP -e 100 --spaces buy sell -j 16
+
 ## Production Commands
 
 To run commands using the production configuration, use the `-f docker-compose.prod.yml` flag:
@@ -97,3 +99,5 @@ docker-compose run --rm freqtrade download-data --config /freqtrade/user_data/co
 # Plot dataframe with production configuration
 docker-compose run --rm freqtrade plot-dataframe --config /freqtrade/user_data/config-backtest.json --strategy FSupertrendStrategy --timeframe 1h --pair VIRTUAL/USDT:USDT --timerange 20250505-
 ```
+
+https://github.com/PeetCrypto/freqtrade-stuff/blob/main/NFI5MOHO_WIP.py

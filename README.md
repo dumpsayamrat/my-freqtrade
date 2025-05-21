@@ -77,6 +77,8 @@ docker-compose run --rm  freqtrade hyperopt --config /freqtrade/user_data/config
 docker-compose run --rm  freqtrade hyperopt --config /freqtrade/user_data/config-backtest.json --timerange 20250510- --hyperopt-loss ProfitDrawDownHyperOptLoss  --strategy FSupertrendStrategy -e 3000 --spaces roi stoploss trailing sell buy -j 24
 
 docker-compose run --rm  freqtrade hyperopt --config /freqtrade/user_data/config-backtest.json --timerange 20250101- --hyperopt-loss SharpeHyperOptLoss  --strategy FSupertrendStrategy -e 500 --spaces roi stoploss trailing sell buy -j 24
+
+docker-compose run --rm  freqtrade hyperopt --config /freqtrade/user_data/config-backtest.json --timerange 20250101- --hyperopt-loss SharpeHyperOptLoss --strategy FSupertrendStrategy -e 3000 --spaces buy sell trailing roi stoploss protection -j 20 --timeframe 1h
 ```
 
 ```bash

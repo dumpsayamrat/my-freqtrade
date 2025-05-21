@@ -5,42 +5,58 @@
       "max_open_trades": 5
     },
     "buy": {
-      "buy_m1": 3,
-      "buy_m2": 1,
-      "buy_m3": 3,
-      "buy_p1": 13,
-      "buy_p2": 19,
-      "buy_p3": 13,
-      "buy_supported_m": 1,
-      "buy_supported_p": 13
+      "buy_m1": 2,
+      "buy_m2": 6,
+      "buy_m3": 1,
+      "buy_max_candle_size": 0.07,
+      "buy_p1": 21,
+      "buy_p2": 13,
+      "buy_p3": 11,
+      "macd_hist_buy": 0.003,
+      "min_exit_p_long": 0.005,
+      "rsi_buy_threshold": 45,
+      "swing_low_look_back": 4
     },
     "sell": {
-      "sell_m1": 1,
-      "sell_m2": 1,
-      "sell_m3": 1,
-      "sell_p1": 7,
-      "sell_p2": 7,
-      "sell_p3": 14,
-      "sell_supported_m": 1,
-      "sell_supported_p": 11
+      "macd_hist_sell": -0.001,
+      "min_exit_p_short": 0.008,
+      "rsi_sell_threshold": 60,
+      "sell_m1": 5,
+      "sell_m2": 2,
+      "sell_m3": 3,
+      "sell_max_candle_size": 0.07,
+      "sell_p1": 17,
+      "sell_p2": 18,
+      "sell_p3": 13,
+      "swing_high_look_back": 5
     },
-    "protection": {},
+    "protection": {
+      "cool_down": 13,
+      "enable_slg": true,
+      "lpp_lookback": 91,
+      "lpp_pause": 36,
+      "lpp_profit": 0.004,
+      "lpp_trades": 2,
+      "slg_limit": 1,
+      "slg_lookback": 122,
+      "slg_pause": 26
+    },
     "roi": {
-      "0": 0.08,
-      "132": 0.054,
-      "343": 0.026,
-      "1603": 0
+      "0": 0.114,
+      "310": 0.083,
+      "721": 0.025,
+      "2062": 0
     },
     "stoploss": {
-      "stoploss": -0.177
+      "stoploss": -0.153
     },
     "trailing": {
       "trailing_stop": true,
-      "trailing_stop_positive": 0.013,
-      "trailing_stop_positive_offset": 0.032,
+      "trailing_stop_positive": 0.192,
+      "trailing_stop_positive_offset": 0.214,
       "trailing_only_offset_is_reached": true
     }
   },
   "ft_stratparam_v": 1,
-  "export_time": "2025-05-17 11:25:31.872205+00:00"
+  "export_time": "2025-05-21 10:18:36.395863+00:00"
 }

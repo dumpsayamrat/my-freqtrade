@@ -4,6 +4,7 @@ from datetime import datetime
 from pandas import DataFrame
 from freqtrade.strategy import IStrategy, IntParameter, CategoricalParameter, Trade, DecimalParameter, BooleanParameter
 import talib.abstract as ta
+from datetime import timedelta
 
 class FSupertrendStrategy(IStrategy):
     """
@@ -270,11 +271,36 @@ class FSupertrendStrategy(IStrategy):
         return dataframe
 
     def populate_exit_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
-        exit_long = dataframe[f"supertrend_2_sell_{self.sell_m2.value}_{self.sell_p2.value}"] == "down"
-        dataframe.loc[exit_long, 'exit_long'] = 1
+        exit_long = ((dataframe[f"supertrend_2_sell_{self.sell_m2.value}_{self.sell_p2.value}"] == "down") & (dataframe[f'swing_high_{self.swing_high_look_back.value}']))
+        dataframe.loc[exit_long, ['exit_long', 'exit_tag']] = (1, 'soft_long_exit')
 
-        exit_short = dataframe[f"supertrend_2_buy_{self.buy_m2.value}_{self.buy_p2.value}"] == "up"
-        dataframe.loc[exit_short, 'exit_short'] = 1
+        exit_short = ((dataframe[f"supertrend_2_buy_{self.buy_m2.value}_{self.buy_p2.value}"] == "up") & (dataframe[f'swing_low_{self.swing_low_look_back.value}']))
+        dataframe.loc[exit_short, ['exit_short', 'exit_tag']] = (1, 'soft_short_exit')
+        
+        buy_mask = (
+            (dataframe[f"supertrend_1_buy_{self.buy_m1.value}_{self.buy_p1.value}"] == "up") &
+            (dataframe[f"supertrend_2_buy_{self.buy_m2.value}_{self.buy_p2.value}"] == "up") &
+            (dataframe[f"supertrend_3_buy_{self.buy_m3.value}_{self.buy_p3.value}"] == "up") &
+            (dataframe['macdhist'] > self.macd_hist_buy.value) &
+            (dataframe['rsi'] > self.rsi_buy_threshold.value) &
+            (dataframe['volume'] > 0) &
+            (dataframe['candle_size'] < self.buy_max_candle_size.value) &
+            (dataframe[f'swing_low_{self.swing_low_look_back.value}'])
+        )
+        
+        dataframe.loc[buy_mask, ['exit_short', 'exit_tag']] = (1, 'hard_short_exit')
+
+        sell_mask = (
+            (dataframe[f"supertrend_1_sell_{self.sell_m1.value}_{self.sell_p1.value}"] == "down") &
+            (dataframe[f"supertrend_2_sell_{self.sell_m2.value}_{self.sell_p2.value}"] == "down") &
+            (dataframe[f"supertrend_3_sell_{self.sell_m3.value}_{self.sell_p3.value}"] == "down") &
+            (dataframe['macdhist'] < self.macd_hist_sell.value) &
+            (dataframe['rsi'] < self.rsi_sell_threshold.value) &
+            (dataframe['volume'] > 0) &
+            (dataframe['candle_size'] < self.sell_max_candle_size.value) &
+            (dataframe[f'swing_high_{self.swing_high_look_back.value}'])
+        )
+        dataframe.loc[sell_mask, ['exit_long', 'exit_tag']] = (1, 'hard_long_exit')
         return dataframe
 
     def confirm_trade_exit(
@@ -289,17 +315,14 @@ class FSupertrendStrategy(IStrategy):
         current_time: datetime,
         **kwargs
     ) -> bool:
-        """
-        Advanced exit filter:
-        - Accepts ROI, stoploss, trailing exit without question.
-        - For 'exit_signal', adds profit threshold AND confirms with MACD/RSI fade.
-        - Forces exit if max duration exceeded (e.g. 24 candles = 24 hours on 1h).
-        """
-        # Allow standard exit reasons
-        if exit_reason != "exit_signal":
+        MAX_TRADE_DURATION = timedelta(days=3)
+
+        if exit_reason != "soft_short_exit" and exit_reason != "soft_long_exit":
+            return True
+        
+        if current_time - trade.open_date_utc >= MAX_TRADE_DURATION:
             return True
 
-        # Profit calculation
         profit_ratio = (rate - trade.open_rate) / trade.open_rate
         if trade.is_short:
             profit_ratio = -profit_ratio
@@ -307,24 +330,20 @@ class FSupertrendStrategy(IStrategy):
         else:
             min_profit = self.min_exit_p_long.value
 
-        # Retrieve the latest candle for this pair
         dataframe, _ = self.dp.get_analyzed_dataframe(pair, self.timeframe)
         if dataframe is None or dataframe.empty:
-            return profit_ratio > min_profit  # fallback
+            return profit_ratio > min_profit            # fallback
 
-        last_candle = dataframe.iloc[-1]
+        last = dataframe.iloc[-1]
 
-        # Momentum confirmation: MACD histogram and RSI divergence
         macd_confirms = (
-            (trade.is_short and last_candle['macdhist'] > self.macd_hist_buy.value * 2) or
-            (not trade.is_short and last_candle['macdhist'] < self.macd_hist_sell.value * 2)
+            (trade.is_short and last['macdhist'] >  self.macd_hist_buy.value  * 2) or
+            (not trade.is_short and last['macdhist'] < self.macd_hist_sell.value * 2)
         )
-
         rsi_confirms = (
-            (trade.is_short and last_candle['rsi'] > self.rsi_sell_threshold.value + 20) or
-            (not trade.is_short and last_candle['rsi'] < self.rsi_buy_threshold.value - 20)
+            (trade.is_short and last['rsi'] >  self.rsi_sell_threshold.value + 20) or
+            (not trade.is_short and last['rsi'] < self.rsi_buy_threshold.value  - 20)
         )
-
         momentum_fade = macd_confirms and rsi_confirms
 
         return profit_ratio > min_profit or momentum_fade

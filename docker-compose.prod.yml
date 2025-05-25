@@ -18,4 +18,4 @@ services:
       --db-url sqlite:////freqtrade/user_data/tradesv3-prod.sqlite
       --config /freqtrade/user_data/config-prod.json
       --config /freqtrade/user_data/config-private.json
-      --strategy FSupertrendStrategy
+      --strategy NFI5MOHO_WIP

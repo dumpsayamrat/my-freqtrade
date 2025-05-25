@@ -1,12 +1,12 @@
 {
     "$schema": "https://schema.freqtrade.io/schema.json",
-    "pairlists":  [
+    "pairlists": [
         {
             "method": "VolumePairList",
-            "number_assets": 25,
+            "number_assets": 40,
             "sort_key": "quoteVolume",
             "min_value": 1000000,
-            "refresh_period": 172800
+            "refresh_period": 21600 
         },
         {
             "method": "AgeFilter",
@@ -16,7 +16,7 @@
             "method": "RangeStabilityFilter",
             "lookback_days": 14,
             "min_rate_of_change": 0.03,
-            "max_rate_of_change": 1.5
+            "max_rate_of_change": 3.0
         },
         {
             "method": "PriceFilter",
@@ -24,7 +24,12 @@
         },
         {
             "method": "SpreadFilter",
-            "max_spread_ratio": 0.003
+            "max_spread_ratio": 0.005
+        },
+        {
+            "method": "ShuffleFilter", 
+            "shuffle_frequency": "candle",
+            "seed": 73
         }
     ],
     "add_config_files": [

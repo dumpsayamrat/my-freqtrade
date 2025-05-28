@@ -51,6 +51,7 @@ class NFI5MOHO_WIP(IStrategy):
                  proposed_leverage: float, max_leverage: float, entry_tag: str | None, side: str,
                  **kwargs) -> float:
         return 3.0
+
     INTERFACE_VERSION = 3
 
     order_types = {
@@ -155,25 +156,25 @@ class NFI5MOHO_WIP(IStrategy):
     base_nb_candles_sell = IntParameter(
         5, 80, default=20, load=True, space='sell', optimize=True)
     low_offset_sma = DecimalParameter(
-        0.9, 0.99, default=0.958, load=True, space='buy', optimize=True)
+        0.9, 0.99, default=0.958, load=True, space='buy', optimize=False)
     high_offset_sma = DecimalParameter(
-        0.99, 1.1, default=1.012, load=True, space='sell', optimize=True)
+        0.99, 1.1, default=1.012, load=True, space='sell', optimize=False)
     low_offset_ema = DecimalParameter(
-        0.9, 0.99, default=0.958, load=True, space='buy', optimize=True)
+        0.9, 0.99, default=0.958, load=True, space='buy', optimize=False)
     high_offset_ema = DecimalParameter(
-        0.99, 1.1, default=1.012, load=True, space='sell', optimize=True)
+        0.99, 1.1, default=1.012, load=True, space='sell', optimize=False)
     low_offset_trima = DecimalParameter(
-        0.9, 0.99, default=0.958, load=True, space='buy', optimize=True)
+        0.9, 0.99, default=0.958, load=True, space='buy', optimize=False)
     high_offset_trima = DecimalParameter(
-        0.99, 1.1, default=1.012, load=True, space='sell', optimize=True)
+        0.99, 1.1, default=1.012, load=True, space='sell', optimize=False)
     low_offset_t3 = DecimalParameter(
-        0.9, 0.99, default=0.958, load=True, space='buy', optimize=True)
+        0.9, 0.99, default=0.958, load=True, space='buy', optimize=False)
     high_offset_t3 = DecimalParameter(
-        0.99, 1.1, default=1.012, load=True, space='sell', optimize=True)
+        0.99, 1.1, default=1.012, load=True, space='sell', optimize=False)
     low_offset_kama = DecimalParameter(
-        0.9, 0.99, default=0.958, load=True, space='buy', optimize=True)
+        0.9, 0.99, default=0.958, load=True, space='buy', optimize=False)
     high_offset_kama = DecimalParameter(
-        0.99, 1.1, default=1.012, load=True, space='sell', optimize=True)
+        0.99, 1.1, default=1.012, load=True, space='sell', optimize=False)
 
     # Protection
     ewo_low = DecimalParameter(
@@ -270,22 +271,26 @@ class NFI5MOHO_WIP(IStrategy):
     buy_condition_19_enable = CategoricalParameter([True, False], default=True, space='buy', optimize=True, load=True)
     buy_condition_20_enable = CategoricalParameter([True, False], default=True, space='buy', optimize=True, load=True)
     buy_condition_21_enable = CategoricalParameter([True, False], default=True, space='buy', optimize=True, load=True)
+    
+    # Spike
+    look_back = IntParameter(9, 20, default=10, space="buy")
+    spike_threshold = DecimalParameter(0.05, 0.15, decimals=3, default=0.08, space="buy")  # e.g. 5% spike
 
     # Normal dips
-    buy_dip_threshold_1 = DecimalParameter(0.001, 0.05, default=0.02, space='buy', decimals=3, optimize=True, load=True)
-    buy_dip_threshold_2 = DecimalParameter(0.01, 0.2, default=0.14, space='buy', decimals=3, optimize=True, load=True)
-    buy_dip_threshold_3 = DecimalParameter(0.05, 0.4, default=0.32, space='buy', decimals=3, optimize=True, load=True)
-    buy_dip_threshold_4 = DecimalParameter(0.2, 0.5, default=0.5, space='buy', decimals=3, optimize=True, load=True)
+    buy_dip_threshold_1 = DecimalParameter(0.001, 0.05, default=0.02, space='buy', decimals=3, optimize=False, load=True)
+    buy_dip_threshold_2 = DecimalParameter(0.01, 0.2, default=0.14, space='buy', decimals=3, optimize=False, load=True)
+    buy_dip_threshold_3 = DecimalParameter(0.05, 0.4, default=0.32, space='buy', decimals=3, optimize=False, load=True)
+    buy_dip_threshold_4 = DecimalParameter(0.2, 0.5, default=0.5, space='buy', decimals=3, optimize=False, load=True)
     # Strict dips
-    buy_dip_threshold_5 = DecimalParameter(0.001, 0.05, default=0.015, space='buy', decimals=3, optimize=True, load=True)
-    buy_dip_threshold_6 = DecimalParameter(0.01, 0.2, default=0.06, space='buy', decimals=3, optimize=True, load=True)
-    buy_dip_threshold_7 = DecimalParameter(0.05, 0.4, default=0.24, space='buy', decimals=3, optimize=True, load=True)
-    buy_dip_threshold_8 = DecimalParameter(0.2, 0.5, default=0.4, space='buy', decimals=3, optimize=True, load=True)
+    buy_dip_threshold_5 = DecimalParameter(0.001, 0.05, default=0.015, space='buy', decimals=3, optimize=False, load=True)
+    buy_dip_threshold_6 = DecimalParameter(0.01, 0.2, default=0.06, space='buy', decimals=3, optimize=False, load=True)
+    buy_dip_threshold_7 = DecimalParameter(0.05, 0.4, default=0.24, space='buy', decimals=3, optimize=False, load=True)
+    buy_dip_threshold_8 = DecimalParameter(0.2, 0.5, default=0.4, space='buy', decimals=3, optimize=False, load=True)
     # Loose dips
-    buy_dip_threshold_9 = DecimalParameter(0.001, 0.05, default=0.026, space='buy', decimals=3, optimize=True, load=True)
-    buy_dip_threshold_10 = DecimalParameter(0.01, 0.2, default=0.24, space='buy', decimals=3, optimize=True, load=True)
-    buy_dip_threshold_11 = DecimalParameter(0.05, 0.4, default=0.42, space='buy', decimals=3, optimize=True, load=True)
-    buy_dip_threshold_12 = DecimalParameter(0.2, 0.5, default=0.66, space='buy', decimals=3, optimize=True, load=True)
+    buy_dip_threshold_9 = DecimalParameter(0.001, 0.05, default=0.026, space='buy', decimals=3, optimize=False, load=True)
+    buy_dip_threshold_10 = DecimalParameter(0.01, 0.2, default=0.24, space='buy', decimals=3, optimize=False, load=True)
+    buy_dip_threshold_11 = DecimalParameter(0.05, 0.4, default=0.42, space='buy', decimals=3, optimize=False, load=True)
+    buy_dip_threshold_12 = DecimalParameter(0.2, 0.5, default=0.66, space='buy', decimals=3, optimize=False, load=True)
 
     # 24 hours
     buy_pump_pull_threshold_1 = DecimalParameter(1.5, 3.0, default=1.75, space='buy', decimals=2, optimize=False, load=True)
@@ -333,14 +338,14 @@ class NFI5MOHO_WIP(IStrategy):
     buy_bb40_bbdelta_close_3 = DecimalParameter(0.005, 0.06, default=0.057, space='buy', optimize=True, load=True)
     buy_bb40_closedelta_close_3 = DecimalParameter(0.01, 0.03, default=0.023, space='buy', optimize=True, load=True)
     buy_bb40_tail_bbdelta_3 = DecimalParameter(0.15, 0.45, default=0.418, space='buy', optimize=True, load=True)
-    buy_ema_rel_3 = DecimalParameter(0.97, 0.999, default=0.986, space='buy', decimals=3, optimize=True, load=True)
+    buy_ema_rel_3 = DecimalParameter(0.97, 0.999, default=0.986, space='buy', decimals=3, optimize=False, load=True)
 
     buy_bb20_close_bblowerband_4 = DecimalParameter(0.96, 0.99, default=0.979, space='buy', optimize=True, load=True)
     buy_bb20_volume_4 = DecimalParameter(1.0, 20.0, default=10.0, space='buy', decimals=2, optimize=True, load=True)
 
     buy_ema_open_mult_5 = DecimalParameter(0.016, 0.03, default=0.019, space='buy', decimals=3, optimize=True, load=True)
     buy_bb_offset_5 = DecimalParameter(0.98, 1.0, default=0.999, space='buy', decimals=3, optimize=True, load=True)
-    buy_ema_rel_5 = DecimalParameter(0.97, 0.999, default=0.982, space='buy', decimals=3, optimize=True, load=True)
+    buy_ema_rel_5 = DecimalParameter(0.97, 0.999, default=0.982, space='buy', decimals=3, optimize=False, load=True)
 
     buy_ema_open_mult_6 = DecimalParameter(0.02, 0.03, default=0.025, space='buy', decimals=3, optimize=True, load=True)
     buy_bb_offset_6 = DecimalParameter(0.98, 0.999, default=0.984, space='buy', decimals=3, optimize=True, load=True)
@@ -348,7 +353,7 @@ class NFI5MOHO_WIP(IStrategy):
     buy_volume_7 = DecimalParameter(1.0, 10.0, default=2.0, space='buy', decimals=1, optimize=True, load=True)
     buy_ema_open_mult_7 = DecimalParameter(0.02, 0.04, default=0.03, space='buy', decimals=3, optimize=True, load=True)
     buy_rsi_7 = DecimalParameter(24.0, 50.0, default=36.0, space='buy', decimals=1, optimize=True, load=True)
-    buy_ema_rel_7 = DecimalParameter(0.97, 0.999, default=0.986, space='buy', decimals=3, optimize=True, load=True)
+    buy_ema_rel_7 = DecimalParameter(0.97, 0.999, default=0.986, space='buy', decimals=3, optimize=False, load=True)
 
     buy_volume_8 = DecimalParameter(1.0, 6.0, default=2.0, space='buy', decimals=1, optimize=True, load=True)
     buy_rsi_8 = DecimalParameter(36.0, 40.0, default=20.0, space='buy', decimals=1, optimize=True, load=True)
@@ -376,11 +381,11 @@ class NFI5MOHO_WIP(IStrategy):
     buy_volume_12 = DecimalParameter(1.0, 10.0, default=1.7, space='buy', decimals=1, optimize=True, load=True)
     buy_ma_offset_12 = DecimalParameter(0.93, 0.97, default=0.936, space='buy', decimals=3, optimize=True, load=True)
     buy_rsi_12 = DecimalParameter(26.0, 40.0, default=30.0, space='buy', decimals=1, optimize=True, load=True)
-    buy_ewo_12 = DecimalParameter(2.0, 6.0, default=2.0, space='buy', decimals=1, optimize=True, load=True)
+    buy_ewo_12 = DecimalParameter(2.0, 6.0, default=2.0, space='buy', decimals=1, optimize=False, load=True)
 
     buy_volume_13 = DecimalParameter(1.0, 10.0, default=1.6, space='buy', decimals=1, optimize=True, load=True)
     buy_ma_offset_13 = DecimalParameter(0.93, 0.98, default=0.978, space='buy', decimals=3, optimize=True, load=True)
-    buy_ewo_13 = DecimalParameter(-14.0, -7.0, default=-10.4, space='buy', decimals=1, optimize=True, load=True)
+    buy_ewo_13 = DecimalParameter(-14.0, -7.0, default=-10.4, space='buy', decimals=1, optimize=False, load=True)
 
     buy_volume_14 = DecimalParameter(1.0, 10.0, default=2.0, space='buy', decimals=1, optimize=True, load=True)
     buy_ema_open_mult_14 = DecimalParameter(0.01, 0.03, default=0.014, space='buy', decimals=3, optimize=True, load=True)
@@ -391,16 +396,16 @@ class NFI5MOHO_WIP(IStrategy):
     buy_ema_open_mult_15 = DecimalParameter(0.02, 0.04, default=0.018, space='buy', decimals=3, optimize=True, load=True)
     buy_ma_offset_15 = DecimalParameter(0.93, 0.99, default=0.954, space='buy', decimals=3, optimize=True, load=True)
     buy_rsi_15 = DecimalParameter(30.0, 50.0, default=28.0, space='buy', decimals=1, optimize=True, load=True)
-    buy_ema_rel_15 = DecimalParameter(0.97, 0.999, default=0.988, space='buy', decimals=3, optimize=True, load=True)
+    buy_ema_rel_15 = DecimalParameter(0.97, 0.999, default=0.988, space='buy', decimals=3, optimize=False, load=True)
 
     buy_volume_16 = DecimalParameter(1.0, 10.0, default=2.0, space='buy', decimals=1, optimize=True, load=True)
     buy_ma_offset_16 = DecimalParameter(0.93, 0.97, default=0.952, space='buy', decimals=3, optimize=True, load=True)
     buy_rsi_16 = DecimalParameter(26.0, 50.0, default=31.0, space='buy', decimals=1, optimize=True, load=True)
-    buy_ewo_16 = DecimalParameter(4.0, 8.0, default=2.8, space='buy', decimals=1, optimize=True, load=True)
+    buy_ewo_16 = DecimalParameter(4.0, 8.0, default=2.8, space='buy', decimals=1, optimize=False, load=True)
 
     buy_volume_17 = DecimalParameter(0.5, 8.0, default=2.0, space='buy', decimals=1, optimize=True, load=True)
     buy_ma_offset_17 = DecimalParameter(0.93, 0.98, default=0.958, space='buy', decimals=3, optimize=True, load=True)
-    buy_ewo_17 = DecimalParameter(-18.0, -10.0, default=-12.0, space='buy', decimals=1, optimize=True, load=True)
+    buy_ewo_17 = DecimalParameter(-18.0, -10.0, default=-12.0, space='buy', decimals=1, optimize=False, load=True)
 
     buy_volume_18 = DecimalParameter(1.0, 6.0, default=2.0, space='buy', decimals=1, optimize=True, load=True)
     buy_rsi_18 = DecimalParameter(16.0, 32.0, default=26.0, space='buy', decimals=1, optimize=True, load=True)
@@ -601,6 +606,14 @@ class NFI5MOHO_WIP(IStrategy):
         informative_1h['safe_pump_36_loose'] = ((((informative_1h['open'].rolling(36).max() - informative_1h['close'].rolling(36).min()) / informative_1h['close'].rolling(36).min()) < self.buy_pump_threshold_8.value) | (((informative_1h['open'].rolling(36).max() - informative_1h['close'].rolling(36).min()) / self.buy_pump_pull_threshold_8.value) > (informative_1h['close'] - informative_1h['close'].rolling(36).min())))
         informative_1h['safe_pump_48_loose'] = ((((informative_1h['open'].rolling(48).max() - informative_1h['close'].rolling(48).min()) / informative_1h['close'].rolling(48).min()) < self.buy_pump_threshold_9.value) | (((informative_1h['open'].rolling(48).max() - informative_1h['close'].rolling(48).min()) / self.buy_pump_pull_threshold_9.value) > (informative_1h['close'] - informative_1h['close'].rolling(48).min())))
 
+        # Calculate percent change from previous close
+        informative_1h['change_pct'] = (informative_1h['close'] - informative_1h['open']) / informative_1h['open']
+
+        # Detect spikes: where change % exceeds threshold
+        informative_1h['is_spike'] = informative_1h['change_pct'] > self.spike_threshold.value
+
+        # Create a rolling window to check if spike happened in past `look_back` candles
+        informative_1h['spike_recent'] = informative_1h['is_spike'].rolling(window=self.look_back.value, min_periods=1).max().fillna(0).astype(bool)
         return informative_1h
 
     def normal_tf_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
@@ -700,6 +713,7 @@ class NFI5MOHO_WIP(IStrategy):
 
                 (dataframe['safe_dips_strict']) &
                 (dataframe['safe_pump_24_1h']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 (((dataframe['close'] - dataframe['open'].rolling(36).min()) / dataframe['open'].rolling(36).min()) > self.buy_min_inc_1.value) &
                 (dataframe['rsi_1h'] > self.buy_rsi_1h_min_1.value) &
@@ -718,6 +732,7 @@ class NFI5MOHO_WIP(IStrategy):
                 (dataframe['sma_200_1h'] > dataframe['sma_200_1h'].shift(50)) &
 
                 (dataframe['safe_pump_24_strict_1h']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 (dataframe['volume_mean_4'] * self.buy_volume_2.value > dataframe['volume']) &
 
@@ -811,6 +826,7 @@ class NFI5MOHO_WIP(IStrategy):
                 (dataframe['ema_50_1h'] > dataframe['ema_200_1h']) &
 
                 (dataframe['safe_dips_strict']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 (dataframe['volume'].rolling(4).mean() * self.buy_volume_7.value > dataframe['volume']) &
 
@@ -970,6 +986,7 @@ class NFI5MOHO_WIP(IStrategy):
 
                 (dataframe['safe_dips']) &
                 (dataframe['safe_pump_36_strict_1h']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 (dataframe['ema_26'] > dataframe['ema_12']) &
                 ((dataframe['ema_26'] - dataframe['ema_12']) > (dataframe['open'] * self.buy_ema_open_mult_15.value)) &
@@ -989,6 +1006,7 @@ class NFI5MOHO_WIP(IStrategy):
 
                 (dataframe['safe_dips_strict']) &
                 (dataframe['safe_pump_24_strict_1h']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 ((dataframe['volume_mean_4'] * self.buy_volume_16.value) > dataframe['volume']) &
 
@@ -1029,6 +1047,7 @@ class NFI5MOHO_WIP(IStrategy):
 
                 (dataframe['safe_dips']) &
                 (dataframe['safe_pump_24_strict_1h']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 ((dataframe['volume_mean_4'] * self.buy_volume_18.value) > dataframe['volume']) &
 
@@ -1084,6 +1103,7 @@ class NFI5MOHO_WIP(IStrategy):
                 (dataframe['ema_50_1h'] > dataframe['ema_200_1h']) &
 
                 (dataframe['safe_dips_strict']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 ((dataframe['volume_mean_4'] * self.buy_volume_21.value) > dataframe['volume']) &
 
@@ -1105,11 +1125,11 @@ class NFI5MOHO_WIP(IStrategy):
                 (dataframe['volume'] > 0)
         )
 
-        if conditions:
-            dataframe.loc[
-                reduce(lambda x, y: x | y, conditions),
-                'enter_long'
-            ] = 1
+        for idx, cond in enumerate(conditions, start=1):
+            dataframe.loc[cond, ['enter_long', 'enter_tag']] = (
+                1,
+                f'buy_signal_{idx:02d}'
+            )
 
         return dataframe
 

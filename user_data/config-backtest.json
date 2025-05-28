@@ -3,6 +3,10 @@
     "pairlists": [
         {
             "method": "StaticPairList"
+        },
+        {
+            "method": "ShuffleFilter",
+            "seed": 33
         }
     ],
     "exchange": {

@@ -12,6 +12,7 @@
     "trading_mode": "futures",
     "margin_mode": "isolated",
     "liquidation_buffer": 0.05,
+    "process_only_new_candles": true,
     "unfilledtimeout": {
         "entry": 10,
         "exit": 10,

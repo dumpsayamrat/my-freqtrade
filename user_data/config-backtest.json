@@ -6,7 +6,7 @@
         },
         {
             "method": "ShuffleFilter",
-            "seed": 33
+            "seed": 73
         }
     ],
     "exchange": {
@@ -39,7 +39,14 @@
             "BCH/USDT:USDT",
             "EOS/USDT:USDT",
             "TRX/USDT:USDT",
-            "ETC/USDT:USDT"
+            "ETC/USDT:USDT",
+            "TRB/USDT:USDT",
+            "JUP/USDT:USDT",
+            "WCT/USDT:USDT",
+            "COOKIE/USDT:USDT",
+            "FLM/USDT:USDT",
+            "MOODENG/USDT:USDT",
+            "CAKE/USDT:USDT"
         ],
         "pair_blacklist": [
             "BNB/.*"

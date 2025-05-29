@@ -97,5 +97,5 @@ docker-compose run --rm freqtrade backtesting --config /freqtrade/user_data/conf
 docker-compose run --rm freqtrade download-data --config /freqtrade/user_data/config-backtest.json --timerange 20250201- --timeframe 1h 4h
 
 # Plot dataframe with production configuration
-docker-compose run --rm freqtrade plot-dataframe --config /freqtrade/user_data/config-backtest.json --strategy FSupertrendStrategy --timeframe 1h --pair VIRTUAL/USDT:USDT --timerange 20250505-
+docker-compose run --rm freqtrade plot-dataframe --config /freqtrade/user_data/config-backtest.json --strategy FSupertrendStrategy --timeframe 1h --timerange 20250512-
 ```

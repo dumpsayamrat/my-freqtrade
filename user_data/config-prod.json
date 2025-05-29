@@ -6,7 +6,7 @@
             "number_assets": 40,
             "sort_key": "quoteVolume",
             "min_value": 1000000,
-            "refresh_period": 21600 
+            "refresh_period": 21600
         },
         {
             "method": "AgeFilter",

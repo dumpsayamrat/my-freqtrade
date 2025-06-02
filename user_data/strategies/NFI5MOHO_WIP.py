@@ -187,7 +187,7 @@ class NFI5MOHO_WIP(IStrategy):
         100, 200, default=200, load=True, space='buy', optimize=True)
 
     # MA list
-    ma_types = ['sma', 'ema', 'trima', 't3', 'kama']
+    ma_types = ['sma', 'ema', 'trima', 't3']
     ma_map = {
         'sma': {
             'low_offset': low_offset_sma.value,
@@ -498,6 +498,15 @@ class NFI5MOHO_WIP(IStrategy):
         return int(self.timeframe[:-1])
 
 
+    def timeframe_to_minutes(self, timeframe: str) -> int:
+        if timeframe.endswith("m"):
+            return int(timeframe[:-1])
+        elif timeframe.endswith("h"):
+            return int(timeframe[:-1]) * 60
+        elif timeframe.endswith("d"):
+            return int(timeframe[:-1]) * 1440
+        raise ValueError(f"Unsupported timeframe: {timeframe}")
+
     def custom_exit(
         self,
         pair: str,
@@ -511,6 +520,14 @@ class NFI5MOHO_WIP(IStrategy):
         Custom exit logic migrated from old custom_sell.
         Return one of your signal strings to trigger exit, or None to do nothing.
         """
+        # Only process near the new candle timestamp
+        candle_interval = self.timeframe_to_minutes(self.timeframe) * 60  # seconds
+        candle_ts = int(current_time.timestamp() // candle_interval * candle_interval)
+        candle_time = datetime.fromtimestamp(candle_ts, tz=current_time.tzinfo)
+
+        # Allow execution only if current_time is within ±5 seconds of new candle
+        if abs((current_time - candle_time).total_seconds()) > 10:
+            return None
         # Get the latest analyzed candles
         dataframe, _ = self.dp.get_analyzed_dataframe(pair, self.timeframe)
         last_candle = dataframe.iloc[-1].squeeze()
@@ -755,6 +772,7 @@ class NFI5MOHO_WIP(IStrategy):
                 (dataframe['ema_100_1h'] > dataframe['ema_200_1h']) &
 
                 (dataframe['safe_pump_36_strict_1h']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 dataframe['lower'].shift().gt(0) &
                 dataframe['bbdelta'].gt(dataframe['close'] * self.buy_bb40_bbdelta_close_3.value) &
@@ -774,6 +792,7 @@ class NFI5MOHO_WIP(IStrategy):
 
                 (dataframe['safe_dips_strict']) &
                 (dataframe['safe_pump_24_1h']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 (dataframe['close'] < dataframe['ema_50']) &
                 (dataframe['close'] < self.buy_bb20_close_bblowerband_4.value * dataframe['bb_lowerband']) &
@@ -790,6 +809,7 @@ class NFI5MOHO_WIP(IStrategy):
 
                 (dataframe['safe_dips']) &
                 (dataframe['safe_pump_36_strict_1h']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 (dataframe['ema_26'] > dataframe['ema_12']) &
                 ((dataframe['ema_26'] - dataframe['ema_12']) > (dataframe['open'] * self.buy_ema_open_mult_5.value)) &
@@ -808,6 +828,7 @@ class NFI5MOHO_WIP(IStrategy):
 
                 (dataframe['safe_dips_loose']) &
                 (dataframe['safe_pump_36_strict_1h']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 (dataframe['ema_26'] > dataframe['ema_12']) &
                 ((dataframe['ema_26'] - dataframe['ema_12']) > (dataframe['open'] * self.buy_ema_open_mult_6.value)) &
@@ -847,6 +868,7 @@ class NFI5MOHO_WIP(IStrategy):
 
                 (dataframe['safe_dips_loose']) &
                 (dataframe['safe_pump_24_1h']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 (dataframe['rsi'] < self.buy_rsi_8.value) &
                 (dataframe['volume'] > (dataframe['volume'].shift(1) * self.buy_volume_8.value)) &
@@ -866,6 +888,7 @@ class NFI5MOHO_WIP(IStrategy):
 
                 (dataframe['safe_dips_strict']) &
                 (dataframe['safe_pump_24_loose_1h']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 (dataframe['volume_mean_4'] * self.buy_volume_9.value > dataframe['volume']) &
 
@@ -887,6 +910,7 @@ class NFI5MOHO_WIP(IStrategy):
 
                 (dataframe['safe_dips_loose']) &
                 (dataframe['safe_pump_24_loose_1h']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 ((dataframe['volume_mean_4'] * self.buy_volume_10.value) > dataframe['volume']) &
 
@@ -907,6 +931,7 @@ class NFI5MOHO_WIP(IStrategy):
                 (dataframe['safe_pump_24_loose_1h']) &
                 (dataframe['safe_pump_36_1h']) &
                 (dataframe['safe_pump_48_loose_1h']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 (((dataframe['close'] - dataframe['open'].rolling(36).min()) / dataframe['open'].rolling(36).min()) > self.buy_min_inc_11.value) &
                 (dataframe['close'] < dataframe['sma_30'] * self.buy_ma_offset_11.value) &
@@ -926,6 +951,7 @@ class NFI5MOHO_WIP(IStrategy):
 
                 (dataframe['safe_dips_strict']) &
                 (dataframe['safe_pump_24_1h']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 ((dataframe['volume_mean_4'] * self.buy_volume_12.value) > dataframe['volume']) &
 
@@ -946,6 +972,7 @@ class NFI5MOHO_WIP(IStrategy):
                 (dataframe['safe_dips_strict']) &
                 (dataframe['safe_pump_24_loose_1h']) &
                 (dataframe['safe_pump_36_loose_1h']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 ((dataframe['volume_mean_4'] * self.buy_volume_13.value) > dataframe['volume']) &
 
@@ -964,6 +991,7 @@ class NFI5MOHO_WIP(IStrategy):
 
                 (dataframe['safe_dips_loose']) &
                 (dataframe['safe_pump_24_1h']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 (dataframe['volume_mean_4'] * self.buy_volume_14.value > dataframe['volume']) &
 
@@ -1023,6 +1051,7 @@ class NFI5MOHO_WIP(IStrategy):
 
                 (dataframe['safe_dips_strict']) &
                 (dataframe['safe_pump_24_loose_1h']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 ((dataframe['volume_mean_4'] * self.buy_volume_17.value) > dataframe['volume']) &
 
@@ -1068,6 +1097,7 @@ class NFI5MOHO_WIP(IStrategy):
 
                 (dataframe['safe_dips']) &
                 (dataframe['safe_pump_24_1h']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 (dataframe['close'].shift(1) > dataframe['ema_100_1h']) &
                 (dataframe['low'] < dataframe['ema_100_1h']) &
@@ -1086,6 +1116,7 @@ class NFI5MOHO_WIP(IStrategy):
 
                 (dataframe['safe_dips']) &
                 (dataframe['safe_pump_24_loose_1h']) &
+                (dataframe['spike_recent_1h'] == False) &
 
                 ((dataframe['volume_mean_4'] * self.buy_volume_20.value) > dataframe['volume']) &
 
@@ -1213,15 +1244,13 @@ class NFI5MOHO_WIP(IStrategy):
             )
         )
 
-        """
-	for i in self.ma_types:
-            conditions.append(
-                (
-                    (dataframe['close'] > dataframe[f'{i}_offset_sell']) &
-                    (dataframe['volume'] > 0)
-                )
-        )
-	"""
+        # for i in self.ma_types:
+        #     conditions.append(
+        #         (
+        #             (dataframe['close'] > dataframe[f'{i}_offset_sell']) &
+        #             (dataframe['volume'] > 0)
+        #         )
+        # )
 
         if conditions:
             dataframe.loc[
@@ -1230,6 +1259,44 @@ class NFI5MOHO_WIP(IStrategy):
             ] = 1
 
         return dataframe
+    
+    # ——————————————————————————————————————————
+    # 4. Protections – adjusted for 5m strategy
+    # ——————————————————————————————————————————
+    slg_lookback = IntParameter(288, 1728, default=864, # 72h = 3d
+                                space="protection")
+    slg_limit    = IntParameter(1, 6, default=1,
+                                space="protection")
+    slg_pause    = IntParameter(72, 576, default=300,   # 12h
+                                space="protection")
+    
+    lpp_lookback = IntParameter(288, 1152, default=576, space="protection")  # 2 days
+    lpp_trades   = IntParameter(2, 6, default=3, space="protection")          # Last 3 trades
+    lpp_profit   = DecimalParameter(-0.45, 0.00, default=-0.40, decimals=3, space="protection")  # -20%
+    lpp_pause    = IntParameter(144, 576, default=300, space="protection")   # 24h = 288 candles (on 5m)
+
+
+    @property
+    def protections(self):
+        prot = [
+            {
+                "method": "StoplossGuard",
+                "lookback_period_candles": self.slg_lookback.value,
+                "trade_limit": self.slg_limit.value,
+                "stop_duration_candles": self.slg_pause.value,
+                "only_per_pair": True
+            },
+            {
+                "method": "LowProfitPairs",
+                "lookback_period_candles": self.lpp_lookback.value,
+                "trade_limit": self.lpp_trades.value,
+                "required_profit": self.lpp_profit.value,
+                "stop_duration_candles": self.lpp_pause.value,
+                "only_per_pair": True
+            }
+        ]
+
+        return prot
 
 
 # Elliot Wave Oscillator

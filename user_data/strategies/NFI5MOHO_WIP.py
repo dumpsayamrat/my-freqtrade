@@ -526,7 +526,7 @@ class NFI5MOHO_WIP(IStrategy):
         candle_time = datetime.fromtimestamp(candle_ts, tz=current_time.tzinfo)
 
         # Allow execution only if current_time is within ±5 seconds of new candle
-        if abs((current_time - candle_time).total_seconds()) > 10:
+        if abs((current_time - candle_time).total_seconds()) > 30:
             return None
         # Get the latest analyzed candles
         dataframe, _ = self.dp.get_analyzed_dataframe(pair, self.timeframe)
